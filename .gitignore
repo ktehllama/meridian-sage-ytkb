@@ -1,0 +1,31 @@
+# Runtime data (large, rsync to Pi separately)
+yc_vectors/
+bm25_cache.pkl
+knowledge.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.env
+.env.local
+
+# Node / Next.js
+node_modules/
+sage_chat/node_modules/
+sage_chat/.next/
+sage_chat/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log
+LATESTCLAUDECHAT.md
+
+# Claude Code local dev files
+.claude/settings.local.json
+.claude/logs/
+.claude/plans/

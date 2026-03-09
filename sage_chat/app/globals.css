@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Backgrounds */
+  --bg-base:        #000000;
+  --bg-surface:     #111111;
+  --bg-sidebar:     #141414;
+  --bg-elevated:    #1a1a1a;
+  --bg-hover:       #1e1e1e;
+  --bg-avatar:      #0a0a0f;
+  /* Borders */
+  --border-primary: #2a2a2a;
+  --border-subtle:  #2f2f2f;
+  --border-avatar:  #1e2a3a;
+  /* Text */
+  --text-primary:   #f0f0f0;
+  --text-secondary: #d0d0d0;
+  --text-body:      #e8e8e8;
+  --text-muted:     #909090;
+  --text-dim:       #606060;
+  --text-faint:     #686868;
+  --text-faintest:  #545454;
+  /* Scrollbar */
+  --scrollbar-thumb: #333333;
+  --scrollbar-hover: #444444;
+  /* Input glassmorphism */
+  --input-bg:        rgba(255,255,255,0.03);
+  --input-border:    rgba(255,255,255,0.14);
+  /* Pill active label */
+  --pill-active-text: #c4b5fd;
+}
+
+[data-theme="light"] {
+  --bg-base:        #FDF6E3;
+  --bg-surface:     #F0E8D0;
+  --bg-sidebar:     #EDE5CC;
+  --bg-elevated:    #E8DEC8;
+  --bg-hover:       #E0D6C0;
+  --bg-avatar:      #DDD4B8;
+  --border-primary: #C9BFA0;
+  --border-subtle:  #D0C8A8;
+  --border-avatar:  #B8A888;
+  --text-primary:   #3D3530;
+  --text-secondary: #5C5248;
+  --text-body:      #4A4038;
+  --text-muted:     #8A7E6A;
+  --text-dim:       #6B6050;
+  --text-faint:     #9A8E7A;
+  --text-faintest:  #A8988A;
+  --scrollbar-thumb: #C0B090;
+  --scrollbar-hover: #B0A080;
+  --input-bg:        rgba(0,0,0,0.03);
+  --input-border:    rgba(0,0,0,0.08);
+  --pill-active-text: #3730a3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}
+
+/* Textarea focus outline */
+textarea:focus {
+  outline: none;
+}
+
+/* Smooth transitions globally */
+* {
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+
+/* Markdown content styles */
+.markdown-content p { margin-bottom: 0.5em; }
+.markdown-content p:last-child { margin-bottom: 0; }
+.markdown-content strong { font-weight: 700; color: var(--text-primary); }
+.markdown-content em { font-style: italic; color: var(--text-secondary); }
+.markdown-content h1, .markdown-content h2, .markdown-content h3 { font-weight: 600; color: var(--text-primary); margin: 0.75em 0 0.4em; }
+.markdown-content h1 { font-size: 1.1em; }
+.markdown-content h2 { font-size: 1em; }
+.markdown-content h3 { font-size: 0.95em; }
+.markdown-content ul { list-style-type: disc; padding-left: 1.25em; margin: 0.5em 0; }
+.markdown-content ol { list-style-type: decimal; padding-left: 1.25em; margin: 0.5em 0; }
+.markdown-content li { margin-bottom: 0.25em; }
+.markdown-content code { background: var(--border-primary); border-radius: 3px; padding: 0.1em 0.3em; font-size: 0.85em; font-family: monospace; }
+.markdown-content pre { background: var(--bg-elevated); border: 1px solid var(--border-primary); border-radius: 6px; padding: 0.75em 1em; overflow-x: auto; margin: 0.5em 0; }
+.markdown-content pre code { background: none; padding: 0; }
+.markdown-content blockquote { border-left: 3px solid var(--text-faintest); padding-left: 0.75em; color: var(--text-muted); margin: 0.5em 0; }
+.markdown-content a { color: #818cf8; text-decoration: underline; }
+
+/* Mention dropdown — hide scrollbar until hover */
+.mention-scroll::-webkit-scrollbar-thumb { background: transparent; }
+.mention-scroll:hover::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); }
+
+/* Suggestion card shuffle transition */
+.suggestion-card {
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+.suggestion-card-exit {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.97);
+}
+.suggestion-card-enter {
+  opacity: 0;
+  transform: translateY(6px) scale(0.97);
+  animation: card-enter 200ms ease forwards;
+}
+@keyframes card-enter {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

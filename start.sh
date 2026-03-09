@@ -25,6 +25,26 @@ export GCP_PROJECT="YOUR_GCP_PROJECT_NUMBER"
 export GCP_LOCATION="us-central1"
 export GEMINI_MODEL="gemini-2.0-flash"
 
+# ── Free ports if already in use ─────────────────────────────────────────────
+free_port() {
+  local port=$1
+  if command -v fuser &>/dev/null; then
+    fuser -k "${port}/tcp" 2>/dev/null || true
+  else
+    # Windows Git Bash fallback
+    local pid
+    pid=$(netstat -ano 2>/dev/null | grep ":${port} " | grep LISTENING | awk '{print $NF}' | head -1)
+    if [[ -n "$pid" ]]; then
+      taskkill //PID "$pid" //F &>/dev/null || true
+    fi
+  fi
+}
+
+echo "[start.sh] Freeing ports 8000 and 3000..."
+free_port 8000
+free_port 3000
+sleep 1
+
 # ── Activate venv if present (Raspberry Pi / local venv) ────────────────────
 if [[ -f "$ROOT/venv/bin/activate" ]]; then
   source "$ROOT/venv/bin/activate"

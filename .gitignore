@@ -29,3 +29,7 @@ LATESTCLAUDECHAT.md
 .claude/settings.local.json
 .claude/logs/
 .claude/plans/
+
+# Build artifacts
+**/__pycache__/
+sage_chat/tsconfig.tsbuildinfo

@@ -2,6 +2,82 @@
 
 ---
 
+## v3.8 — 2026-03-08 — Project Structure + Deployment ⭐ Stable
+
+### Deployment
+- **`start.sh`** — unified bash startup script; works on Windows (Git Bash) and Linux/Raspberry Pi. Starts FastAPI (port 8000) and Next.js (port 3000) in parallel with `trap cleanup` so Ctrl+C kills both. `--dev` flag switches to `npm run dev`. Auto-activates venv if present.
+- **Auto port-free** — script detects and kills any process on 3000/8000 before starting (uses `fuser` on Linux, `netstat` + `taskkill` on Windows).
+- **Project reorganized** — `docs/` folder for OVERVIEW, MANUAL, TODO; `archive/` for legacy scripts (vector_builder, smoke_test, yt_scraper, start_api.ps1, queue_channels.txt, unicornEmbed.js copy, v2/). Root contains only active files.
+- **`.gitignore` fixed** — previous file was corrupted UTF-16; rewrote as clean UTF-8. Now properly excludes `yc_vectors/`, `bm25_cache.pkl`, `knowledge.db`, `node_modules/`, `.next/`, `__pycache__/`, `venv/`.
+- **GitHub push** — first clean push to `ktehllama/meridian-sage-ytkb`. Large runtime data files excluded; all commit history squashed to avoid GitHub 100MB file limit from prior tracked binaries.
+
+---
+
+## v3.7 — 2026-03-08 — Input Centering + Scrollbar Fixes
+
+### Fixed
+- **Textarea vertical centering** (`ChatInput.tsx`) — replaced `relative flex-1` + `absolute inset-0` mirror with CSS Grid (`display: grid`, both elements on `gridArea: '1/1'`). Mirror now in normal document flow, determines cell height correctly; parent `items-center` now truly centers content in the pill. Removed `resizeTextarea()` entirely — grid auto-sizes via mirror content.
+- **`@`-mention scrollbar not appearing without arrow keys** (`ChatInput.tsx`) — `.mention-scroll` `:hover` CSS doesn't fire during scroll-wheel events, keeping the thumb transparent. Fixed with `mentionScrolled` React state: first `onScroll` event removes the hide-class immediately. Resets to false each time dropdown opens.
+
+---
+
+## v3.6 — 2026-03-08 — @-mention Highlight + Scrollbar Polish
+
+### Added
+- **Blurple `@mention` highlight** (`ChatInput.tsx`) — valid channel handles typed as `@name` are highlighted indigo (`#818cf8`, 15% bg) inside the chat bar using a transparent textarea overlaid on a mirror div. Unrecognized `@words` stay unstyled.
+
+### Fixed
+- **Mention dropdown scrollbar flash** (`ChatInput.tsx`, `globals.css`) — scrollbar thumb hidden on mount via `.mention-scroll` CSS class; only appears on hover.
+- **`@`-mention double `@@`** — channel names from API already include `@`; `insertMention` now strips it before prepending.
+- **Quick/Deep pill selected text in light mode** — added `--pill-active-text` CSS variable (`#c4b5fd` dark / `#3730a3` light).
+- **`@`-mention infinite scroll** — dropdown renders 6 items at a time; loads 6 more on scroll near bottom.
+
+---
+
+## v3.5 — 2026-03-08 — Floating Chat Bar
+
+### Changed
+- **Floating input** (`ChatInput.tsx`, `ChatInterface.tsx`, `MessageList.tsx`) — chat bar now floats `absolute bottom-6` over the message area (Claude.ai / ChatGPT style). `floating` prop controls layout. `pb-32` on scroll container prevents last message being hidden. UnicornBackground now fills full viewport height.
+
+---
+
+## v3.4 — 2026-03-08 — UX Polish Sprint
+
+### Added
+- **Smart chat naming** (`lib/chatName.ts`) — pure-TS TF-IDF-like keyword scorer; generates names like "Startup Fundraising Pitch Investors" from the first exchange. No LLM, no deps. Name generated once and cached.
+- **`@`-mention channel autocomplete** (`ChatInput.tsx`) — type `@` for a floating dropdown of matching channels. ArrowUp/Down/Enter/Tab/Escape keyboard nav. Channel list cached after first fetch.
+
+### Fixed
+- **Sidebar relative timestamps** — "just now", "X min ago", "Yesterday", "X weeks ago", "half a year ago", etc.
+- **Sidebar meta contrast** — separators and counts bumped to more readable CSS tokens.
+- **Light mode contrast** — Quick/Deep pill inactive, pill separator, SettingsPanel theme toggle all converted from hardcoded `white/N` to CSS variable tokens.
+- **Dark mode readability** — `--text-faint` `#505050`→`#686868`, `--text-faintest` `#404040`→`#545454`; SourceCards, MessageBubble copy button and stopped text bumped.
+
+---
+
+## v3.3 — 2026-03-08 — Theming System + Settings + Favicon
+
+### Added
+- **CSS variable theming** (`globals.css`) — 20 semantic tokens, dark default + warm Solarized cream light override (`#FDF6E3`).
+- **`lib/theme.ts`** — getTheme / setTheme / applyTheme, persists to localStorage. Anti-flash inline script in layout.
+- **`lib/profiles.ts`** — profile CRUD (add, rename, delete, switch), localStorage-backed.
+- **SettingsPanel** — right drawer with theme toggle (Dark ↔ Light) and profile management.
+- **Favicon** — Meridian starburst SVG (`public/favicon.svg`).
+
+---
+
+## v3.2 — 2026-03-07 — Performance Fixes
+
+### Fixed
+- **UnicornBackground WebGL leak** — always-mounted, CSS-hidden when off home screen. Each unmount previously leaked a WebGL context and render loop.
+- **Orphaned fetch on new chat** — `handleNewChat` now aborts in-flight requests.
+- **`CLEAR_CHAT` reducer** — now resets `loading: false`; was blocking next submission.
+- **`saveChat` O(N×M)** — switched to in-memory Map cache.
+- **`handleSubmit` dep array** — removed `state.messages`; was recreating callback 33×/sec during word-reveal.
+- **`React.memo`** — applied to `MessageList` and `MessageBubble`.
+
+---
+
 ## v3.1 — 2026-03-08
 
 ### Rebrand: Sage → Meridian

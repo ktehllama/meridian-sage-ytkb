@@ -93,10 +93,13 @@ def expand_query(query: str) -> list[str]:
     On Gemini failure, returns [query] only so the pipeline can still run.
     """
     prompt = (
-        "Generate 3 paraphrased versions of this search query that capture the same intent "
-        "but use different wording. Return ONLY the paraphrases, one per line, no numbering, "
-        "no bullet points, no explanation.\n\n"
-        f"Original query: {query}"
+        "You are a search query optimizer. Given a user query that may contain typos or "
+        "misspellings, do two things:\n"
+        "1. Correct any typos/misspellings (e.g. 'coed' → 'code', 'borris cherny' → 'Boris Cherny')\n"
+        "2. Generate 3 paraphrased versions of the CORRECTED query using different wording\n\n"
+        "Return ONLY the corrected query followed by the 3 paraphrases, one per line, "
+        "no numbering, no bullet points, no labels, no explanation.\n\n"
+        f"User query: {query}"
     )
 
     try:
@@ -105,14 +108,14 @@ def expand_query(query: str) -> list[str]:
             model=config.GEMINI_MODEL,
             contents=prompt,
             config=genai.types.GenerateContentConfig(
-                max_output_tokens=150,
+                max_output_tokens=200,
                 temperature=0.7,
             ),
         )
         raw = response.text.strip()
         variants = [line.strip() for line in raw.split("\n") if line.strip()]
-        # Always put original first, cap variants at 3
-        return [query] + variants[:3]
+        # Put original first, then corrected + paraphrases (cap at 4 total variants)
+        return [query] + variants[:4]
     except Exception as e:
         logger.warning(f"Query expansion failed (using original only): {e}")
         return [query]

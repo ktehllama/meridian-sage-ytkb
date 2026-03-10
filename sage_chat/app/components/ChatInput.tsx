@@ -161,7 +161,7 @@ export default function ChatInput({
       <div className="relative max-w-3xl mx-auto">
         {/* @-mention dropdown */}
         {mentionQuery !== null && mentionResults.length > 0 && (
-          <div className="absolute bottom-full left-0 right-0 mb-1">
+          <div className="absolute bottom-full left-0 right-0 mb-1 z-50">
             <div
               className={`${mentionScrolled ? '' : 'mention-scroll'} rounded-xl border border-[var(--border-primary)] shadow-xl overflow-y-auto`}
               style={{

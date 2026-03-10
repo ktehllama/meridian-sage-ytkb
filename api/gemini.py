@@ -85,68 +85,45 @@ RULES:
 # Query expansion
 # ─────────────────────────────────────────────────────────────
 
-def _correct_query(client: genai.Client, query: str) -> str:
-    """Fix typos/misspellings in the query. Returns corrected string or original on failure."""
-    prompt = (
-        "Fix any typos or misspellings in this search query. "
-        "Return ONLY the corrected query, nothing else. "
-        "If there are no errors, return the query unchanged.\n\n"
-        f"Query: {query}"
-    )
-    try:
-        response = client.models.generate_content(
-            model=config.GEMINI_MODEL,
-            contents=prompt,
-            config=genai.types.GenerateContentConfig(
-                max_output_tokens=100,
-                temperature=0.0,
-            ),
-        )
-        corrected = response.text.strip()
-        if corrected:
-            logger.info(f"Query corrected: '{query}' → '{corrected}'")
-            return corrected
-    except Exception as e:
-        logger.warning(f"Query correction failed: {e}")
-    return query
-
-
 def expand_query(query: str) -> list[str]:
     """
-    Correct typos then generate 3 paraphrased variants of the query using Gemini.
+    Correct typos and generate 3 paraphrased variants of the query using Gemini.
     Returns a list: [original, corrected, paraphrase1, paraphrase2, paraphrase3].
 
     On Gemini failure, returns [query] only so the pipeline can still run.
     """
+    prompt = (
+        "Output exactly 4 lines for the search query below:\n"
+        "Line 1: the query with ONLY spelling typos fixed (e.g. 'coed'→'code', 'sentce'→'sentence', 'borris'→'Boris') — keep the same words and meaning otherwise\n"
+        "Line 2: a paraphrase of line 1 using different wording\n"
+        "Line 3: another paraphrase of line 1\n"
+        "Line 4: another paraphrase of line 1\n"
+        "No labels, no numbering, no explanation. Just 4 lines.\n\n"
+        f"Query: {query}"
+    )
+
     try:
         client = _get_client()
-
-        # Step 1: correct typos
-        corrected = _correct_query(client, query)
-
-        # Step 2: paraphrase the corrected query
-        prompt = (
-            "Generate 3 paraphrased versions of this search query that capture the same intent "
-            "but use different wording. Return ONLY the 3 paraphrases, one per line, "
-            "no numbering, no bullet points, no explanation.\n\n"
-            f"Query: {corrected}"
-        )
         response = client.models.generate_content(
             model=config.GEMINI_MODEL,
             contents=prompt,
             config=genai.types.GenerateContentConfig(
-                max_output_tokens=300,
-                temperature=0.7,
+                max_output_tokens=400,
+                temperature=0.4,
             ),
         )
         raw = response.text.strip()
-        paraphrases = [line.strip() for line in raw.split("\n") if line.strip()]
+        lines = [line.strip() for line in raw.split("\n") if line.strip()]
 
-        # Build variant list: original + corrected (if different) + paraphrases
+        corrected = lines[0] if lines else query
+        if corrected.lower() != query.lower():
+            logger.info(f"Query corrected: '{query}' → '{corrected}'")
+
+        # original + corrected (if different) + paraphrases
         variants: list[str] = [query]
         if corrected.lower() != query.lower():
             variants.append(corrected)
-        variants.extend(paraphrases[:3])
+        variants.extend(lines[1:4])
         return variants
 
     except Exception as e:

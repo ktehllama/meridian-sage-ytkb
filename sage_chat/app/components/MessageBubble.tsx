@@ -94,8 +94,9 @@ const MessageBubble = React.memo(function MessageBubble({ role, content, sources
       </div>
 
       <div className="flex-1 min-w-0 group/bubble">
-        {/* Message bubble */}
-        <div className="markdown-content bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-[var(--text-body)]">
+        {/* Bubble row: content + copy icon to the right */}
+        <div className="flex items-start gap-2">
+        <div className="markdown-content flex-1 min-w-0 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-[var(--text-body)]">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw]}
@@ -139,33 +140,24 @@ const MessageBubble = React.memo(function MessageBubble({ role, content, sources
           </ReactMarkdown>
         </div>
 
-        {/* Copy button — appears on bubble hover, collapses to zero height when not hovered */}
-        <div className="grid grid-rows-[0fr] group-hover/bubble:grid-rows-[1fr] transition-[grid-template-rows] duration-150 overflow-hidden">
-          <div className="min-h-0 flex justify-end pt-0.5">
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-1 text-[10px] text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors px-1.5 py-0.5 rounded"
-              title="Copy response"
-            >
-              {copied ? (
-                <>
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M20 6L9 17l-5-5"/>
-                  </svg>
-                  <span>Copied</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                  </svg>
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+        {/* Copy icon — floats to the right of the bubble on hover */}
+        <button
+          onClick={handleCopy}
+          className="flex-shrink-0 mt-2 opacity-0 group-hover/bubble:opacity-100 transition-opacity text-[var(--text-dim)] hover:text-[var(--text-secondary)]"
+          title={copied ? 'Copied!' : 'Copy response'}
+        >
+          {copied ? (
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          ) : (
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          )}
+        </button>
+        </div>{/* end bubble row */}
 
         {/* Stopped indicator */}
         {stopped && (

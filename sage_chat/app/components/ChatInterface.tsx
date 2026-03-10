@@ -154,7 +154,16 @@ export default function ChatInterface() {
   useEffect(() => {
     setTotalSpent(getBudgetSpent());
     setBudgetCapState(getBudgetCap());
-    getHealth().then(h => setModelName(formatModelName(h.model))).catch(() => {});
+    // Retry health check until backend is ready (may take a few seconds on startup)
+    let attempts = 0;
+    const tryHealth = () => {
+      getHealth()
+        .then(h => setModelName(formatModelName(h.model)))
+        .catch(() => {
+          if (++attempts < 8) setTimeout(tryHealth, 2000);
+        });
+    };
+    tryHealth();
   }, []);
   const [settingsOpen, setSettingsOpen] = useState(false);
 

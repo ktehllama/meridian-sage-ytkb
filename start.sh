@@ -66,7 +66,7 @@ trap cleanup EXIT INT TERM
 # ── Start API ────────────────────────────────────────────────────────────────
 echo "[start.sh] Starting API (port 8000)..."
 cd "$ROOT"
-uvicorn api.main:app --host 0.0.0.0 --port 8000 &
+uvicorn api.main:app --port 8000 &
 API_PID=$!
 
 # ── Start frontend ───────────────────────────────────────────────────────────

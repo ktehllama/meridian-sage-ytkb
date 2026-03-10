@@ -364,8 +364,9 @@ export default function ChatInterface() {
                   if (e.key === 'Enter') {
                     const val = parseFloat(budgetInput);
                     if (!isNaN(val) && val >= 0) {
-                      setBudgetCap(val);
-                      setBudgetCapState(val);
+                      const newCap = val + totalSpent;
+                      setBudgetCap(newCap);
+                      setBudgetCapState(newCap);
                     }
                     setEditingBudget(false);
                   }
@@ -374,8 +375,9 @@ export default function ChatInterface() {
                 onBlur={() => {
                   const val = parseFloat(budgetInput);
                   if (!isNaN(val) && val >= 0) {
-                    setBudgetCap(val);
-                    setBudgetCapState(val);
+                    const newCap = val + totalSpent;
+                    setBudgetCap(newCap);
+                    setBudgetCapState(newCap);
                   }
                   setEditingBudget(false);
                 }}
@@ -386,7 +388,7 @@ export default function ChatInterface() {
               <button
                 className="text-xs font-mono text-emerald-500 hover:text-emerald-400 transition-colors"
                 title={`$${totalSpent.toFixed(5)} spent — click to edit budget`}
-                onClick={() => { setBudgetInput(budgetCap.toFixed(5)); setEditingBudget(true); }}
+                onClick={() => { setBudgetInput((budgetCap - totalSpent).toFixed(5)); setEditingBudget(true); }}
                 suppressHydrationWarning
               >
                 ${(budgetCap - totalSpent).toFixed(5)} left

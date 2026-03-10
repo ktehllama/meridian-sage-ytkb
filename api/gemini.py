@@ -85,37 +85,70 @@ RULES:
 # Query expansion
 # ─────────────────────────────────────────────────────────────
 
-def expand_query(query: str) -> list[str]:
-    """
-    Generate 3 paraphrased variants of the query using Gemini.
-    Returns a list starting with the original query, followed by up to 3 variants.
-
-    On Gemini failure, returns [query] only so the pipeline can still run.
-    """
+def _correct_query(client: genai.Client, query: str) -> str:
+    """Fix typos/misspellings in the query. Returns corrected string or original on failure."""
     prompt = (
-        "You are a search query optimizer. Given a user query that may contain typos or "
-        "misspellings, do two things:\n"
-        "1. Correct any typos/misspellings (e.g. 'coed' → 'code', 'borris cherny' → 'Boris Cherny')\n"
-        "2. Generate 3 paraphrased versions of the CORRECTED query using different wording\n\n"
-        "Return ONLY the corrected query followed by the 3 paraphrases, one per line, "
-        "no numbering, no bullet points, no labels, no explanation.\n\n"
-        f"User query: {query}"
+        "Fix any typos or misspellings in this search query. "
+        "Return ONLY the corrected query, nothing else. "
+        "If there are no errors, return the query unchanged.\n\n"
+        f"Query: {query}"
     )
-
     try:
-        client = _get_client()
         response = client.models.generate_content(
             model=config.GEMINI_MODEL,
             contents=prompt,
             config=genai.types.GenerateContentConfig(
-                max_output_tokens=200,
+                max_output_tokens=100,
+                temperature=0.0,
+            ),
+        )
+        corrected = response.text.strip()
+        if corrected:
+            logger.info(f"Query corrected: '{query}' → '{corrected}'")
+            return corrected
+    except Exception as e:
+        logger.warning(f"Query correction failed: {e}")
+    return query
+
+
+def expand_query(query: str) -> list[str]:
+    """
+    Correct typos then generate 3 paraphrased variants of the query using Gemini.
+    Returns a list: [original, corrected, paraphrase1, paraphrase2, paraphrase3].
+
+    On Gemini failure, returns [query] only so the pipeline can still run.
+    """
+    try:
+        client = _get_client()
+
+        # Step 1: correct typos
+        corrected = _correct_query(client, query)
+
+        # Step 2: paraphrase the corrected query
+        prompt = (
+            "Generate 3 paraphrased versions of this search query that capture the same intent "
+            "but use different wording. Return ONLY the 3 paraphrases, one per line, "
+            "no numbering, no bullet points, no explanation.\n\n"
+            f"Query: {corrected}"
+        )
+        response = client.models.generate_content(
+            model=config.GEMINI_MODEL,
+            contents=prompt,
+            config=genai.types.GenerateContentConfig(
+                max_output_tokens=300,
                 temperature=0.7,
             ),
         )
         raw = response.text.strip()
-        variants = [line.strip() for line in raw.split("\n") if line.strip()]
-        # Put original first, then corrected + paraphrases (cap at 4 total variants)
-        return [query] + variants[:4]
+        paraphrases = [line.strip() for line in raw.split("\n") if line.strip()]
+
+        # Build variant list: original + corrected (if different) + paraphrases
+        variants: list[str] = [query]
+        if corrected.lower() != query.lower():
+            variants.append(corrected)
+        variants.extend(paraphrases[:3])
+        return variants
+
     except Exception as e:
         logger.warning(f"Query expansion failed (using original only): {e}")
         return [query]

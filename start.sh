@@ -23,7 +23,7 @@ export SQLITE_DB_PATH="$ROOT/knowledge.db"
 export CHROMA_COLLECTION="transcripts"
 export GCP_PROJECT="YOUR_GCP_PROJECT_NUMBER"
 export GCP_LOCATION="us-central1"
-export GEMINI_MODEL="gemini-2.5-flash-preview-05-20"
+export GEMINI_MODEL="gemini-2.0-flash"
 
 # ── Free ports if already in use ─────────────────────────────────────────────
 free_port() {

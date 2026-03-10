@@ -93,10 +93,9 @@ const MessageBubble = React.memo(function MessageBubble({ role, content, sources
         <MeridianLogo size={18} gradientId="mlg-bubble" />
       </div>
 
-      <div className="flex-1 min-w-0 group/bubble">
-        {/* Bubble row: content + copy icon to the right */}
-        <div className="flex items-start gap-2">
-        <div className="markdown-content flex-1 min-w-0 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-[var(--text-body)]">
+      <div className="flex-1 min-w-0 relative group/bubble">
+        {/* Message bubble — full width */}
+        <div className="markdown-content bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-[var(--text-body)]">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw]}
@@ -140,10 +139,10 @@ const MessageBubble = React.memo(function MessageBubble({ role, content, sources
           </ReactMarkdown>
         </div>
 
-        {/* Copy icon — floats to the right of the bubble on hover */}
+        {/* Copy icon — absolutely positioned outside the right edge, no layout impact */}
         <button
           onClick={handleCopy}
-          className="flex-shrink-0 mt-2 opacity-0 group-hover/bubble:opacity-100 transition-opacity text-[var(--text-dim)] hover:text-[var(--text-secondary)]"
+          className="absolute top-3 -right-7 opacity-0 group-hover/bubble:opacity-100 transition-opacity text-[var(--text-dim)] hover:text-[var(--text-secondary)]"
           title={copied ? 'Copied!' : 'Copy response'}
         >
           {copied ? (
@@ -157,7 +156,6 @@ const MessageBubble = React.memo(function MessageBubble({ role, content, sources
             </svg>
           )}
         </button>
-        </div>{/* end bubble row */}
 
         {/* Stopped indicator */}
         {stopped && (

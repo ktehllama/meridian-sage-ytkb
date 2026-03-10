@@ -2,6 +2,63 @@
 
 ---
 
+## 2026-03-10 — Server-Side Chat Persistence
+
+### Added
+- **`api/chat_db.py`** — New SQLite CRUD module for `chats.db` (separate from `knowledge.db`). Functions: `init_db`, `upsert_chat`, `list_chats`, `delete_chat`, `rename_chat`.
+- **`/api/chats` routes** (`api/main.py`) — `GET` (list all), `POST` (upsert), `DELETE /{id}`, `PATCH /{id}` (rename). Chats stored server-side, sorted by `saved_at DESC`, capped at 50.
+- **`CHATS_DB_PATH`** config env var (`api/config.py`, `start.sh`) — defaults to `./chats.db` at project root.
+- **`initChatsFromServer()`** (`lib/api.ts`) — async function that fetches all chats from the API and populates the in-memory cache. Called on app mount and on every Sidebar open.
+
+### Changed
+- **`lib/api.ts`** — `saveChat`, `deleteChat`, `renameChat` now fire-and-forget API calls in addition to updating the in-memory cache. `localStorage` chat storage removed entirely — server is the single source of truth.
+- **`Sidebar.tsx`** — `useEffect` on `isOpen` now calls `initChatsFromServer()` before setting state, so sidebar always shows the latest server-side chats.
+- **`ChatInterface.tsx`** — Calls `initChatsFromServer()` on mount to pre-populate cache before sidebar is first opened.
+
+### Result
+Chats are now accessible from any origin or device — `192.168.1.45:3000`, `meridian-pi.duckdns.org`, Tailscale, etc. all share the same chat history stored on the Pi.
+
+---
+
+## 2026-03-10 — Raspberry Pi Deployment + nginx + HTTPS
+
+### Added
+- **nginx reverse proxy** on Pi — proxies `meridian-pi.duckdns.org` (port 80/443) to Next.js (3000) and API (8000). No port needed in the URL.
+- **Let's Encrypt SSL** via DuckDNS certbot DNS challenge (`certbot-dns-duckdns`) — valid HTTPS cert for `meridian-pi.duckdns.org` without requiring public port forwarding.
+- **DuckDNS hostname** — `meridian-pi.duckdns.org` → `192.168.1.45`. Clean URL for all LAN devices and phones, no hosts file changes needed.
+
+### Fixed
+- **Mixed content / CORS over HTTPS** (`lib/api.ts`) — API URL now uses `window.location.protocol` to detect HTTPS context. Over HTTPS uses same-origin (`https://host/api/...`) so nginx proxies internally; over HTTP uses direct `:8000`. Eliminates mixed content blocks.
+- **CORS regex** (`api/main.py`) — Added `https://.*\.duckdns\.org` pattern to allow the duckdns origin without a port.
+- **`Access-Control-Allow-Private-Network`** header — Added `PrivateNetworkMiddleware` to handle Chrome's Private Network Access policy for cross-port local requests.
+
+---
+
+## 2026-03-10 — UX + Model Display Fixes
+
+### Added
+- **Model name in header** (`ChatInterface.tsx`) — Fetches active Gemini model from `/api/health` on mount (with retry), displays centered in the top navbar in bold gray text. Hidden on mobile (`hidden md:block`), only visible during active chat (not on hero screen).
+- **`formatModelName()`** (`lib/api.ts`) — Converts `gemini-2.0-flash` → `Gemini 2.0 Flash`, strips `-preview-...` suffixes.
+- **`model` field in `/api/health`** (`api/models.py`, `api/main.py`) — Health endpoint now returns the active `GEMINI_MODEL` string.
+
+### Fixed
+- **Typing indicator during word-reveal** (`ChatInterface.tsx`) — `SET_LOADING: false` now dispatched immediately when the assistant message is added (before word-reveal starts), not after all words finish revealing. Typing indicator disappears as soon as the answer begins.
+- **Copy button layout** (`MessageBubble.tsx`) — Copy icon is now `absolute -right-7` outside the bubble's right edge, zero layout impact on bubble width or the sources/token row below.
+- **Copy button hitbox** (`MessageBubble.tsx`) — Added `pt-2 pb-4 px-1` padding for easier targeting.
+- **UnicornBackground not resuming** (`MessageList.tsx`) — Changed from `hidden` (display:none kills WebGL render loop) to `opacity-0/100` with 500ms transition. Canvas stays warm, fades smoothly on home↔chat navigation.
+- **Health check on startup** (`ChatInterface.tsx`) — Retries `/api/health` up to 8× every 2 seconds so model name loads even if backend takes a moment to start.
+
+---
+
+## 2026-03-10 — Token Cost Tracking + Query Expansion Fixes
+
+### Fixed
+- **Accurate cost display** — Token count now sums both the query expansion call and the synthesis call. Previously only synthesis tokens were tracked, underreporting cost.
+- **Query expansion returning 1 variant** (`api/gemini.py`) — 200-token limit was being hit, truncating output mid-response. Bumped to 400 tokens. Prompt restructured to explicit line format (line 1 = corrected query, lines 2-4 = paraphrases) at `temperature=0.4` for reliable instruction-following.
+- **Typo correction in query expansion** (`api/gemini.py`) — Gemini now corrects misspellings (e.g. "claude coed" → "claude code") before generating paraphrases. Original query still included as first variant for fallback. `expand_query` now returns `(variants, usage)` tuple.
+
+---
+
 ## 2026-03-08 — Centering Fix + Scrollbar Fix
 
 ### Fixed

@@ -1321,8 +1321,85 @@ Start:     bash start.sh        # production
 
 7. **Vertex AI auth**: `gcloud auth application-default login` once per machine. No API key file. Credentials in `~/.config/gcloud/application_default_credentials.json`.
 
-8. **Chat history**: localStorage key `sage_chats`, max 50 chats. Never sent to server. Backend is stateless.
+8. **Chat history**: stored server-side in `chats.db` (SQLite). Frontend uses in-memory cache (`_chatsCache`), populated via `initChatsFromServer()` on mount and on every Sidebar open. Max 50 chats. `localStorage` chat storage removed — server is source of truth.
 
 9. **`start.sh` is canonical**: `start_api.ps1` is archived. `start.sh` works on Windows Git Bash and Linux/Pi.
 
 10. **`sage_chat/` is the frontend folder name**: internal codename. "Meridian" is the product name.
+
+---
+
+## Session 12 — 2026-03-10: Pi Deployment, HTTPS, Server-Side Chats
+
+### Context
+
+This session focused entirely on production readiness: getting Meridian running cleanly on a Raspberry Pi accessible from any device on the local network, with a real domain name and HTTPS. A series of infrastructure issues were discovered and resolved sequentially. The session ended with a complete server-side chat persistence feature.
+
+### Pi Deployment Fixes
+
+**Editable budget cap**: The green `$X left` display was read-only. Clicking it now opens an inline number input pre-filled with the current remaining amount. Saving recomputes the cap as `input + totalSpent` so the display matches exactly what was typed. Fixed a math bug where saving was subtracting instead of replacing.
+
+**Dynamic API URL**: The frontend was hardcoding `localhost:8000`. Changed `lib/api.ts` to use `window.location.hostname` at runtime, so accessing from any device automatically targets the correct host. `.env.local` was being tracked by git (baking `localhost` into builds) — untracked it and added to `.gitignore`.
+
+**uvicorn binding**: `start.sh` was launching uvicorn bound to `127.0.0.1`. External connections refused. Added `--host 0.0.0.0`.
+
+**Chrome Private Network Access (PNA)**: Chrome classifies `.local` mDNS hostnames as "local" address space — stricter than private IPs. HTTP requests from a `.local` origin to another `.local` port are blocked regardless of CORS headers. Resolution: use the Pi's IP address (`192.168.1.45`) instead of `pi-cloud.local`. Added `PrivateNetworkMiddleware` to set `Access-Control-Allow-Private-Network: true`, and expanded `allow_origin_regex` to cover private IP ranges.
+
+**Gemini credentials on Pi**: API calls failed with `403 PERMISSION_DENIED`. The Pi had no Application Default Credentials. Fixed by creating a GCP service account key file (`gcp-key.json`) and setting `GOOGLE_APPLICATION_CREDENTIALS` in `start.sh`. Granted the service account the `Vertex AI User` IAM role.
+
+**Gemini 2.5 Flash**: User tested `gemini-2.5-flash` (without preview suffix) and found it worked on the Pi. However, `gemini-2.0-flash` proved more reliable for structured prompt-following (query expansion), so 2.0 Flash remained the default.
+
+### Query Expansion + Typo Correction
+
+The original `expand_query` function sent a single prompt asking for 3 paraphrases with no typo correction. Issues discovered:
+
+1. The 200-token limit was being hit — only 1 variant returned, second cut off mid-sentence.
+2. Adding typo correction to the same prompt caused Gemini to destroy the query (returned "what" for a full sentence at `temperature=0.0`).
+
+Solution: single call with explicit line format — "line 1: corrected query, lines 2-4: paraphrases" at `temperature=0.4`, 400-token budget. The original (possibly typo'd) query is always prepended as the first variant. `expand_query` now returns `(variants, usage)` tuple.
+
+**Accurate cost tracking**: Expansion call tokens were never counted. `expand_query` now returns `usage_metadata` from its Gemini response. `api/main.py` sums expansion + synthesis tokens before building `UsageInfo`. Displayed cost is now the true total.
+
+### Model Name in Header
+
+`/api/health` extended with a `model` field returning the active `GEMINI_MODEL` string. Frontend fetches this on mount (with exponential retry up to 8 attempts for slow backend starts), formats `gemini-2.0-flash` → `Gemini 2.0 Flash` via `formatModelName()`, and displays it centered in the top navbar. Hidden on mobile (`hidden md:block`), only shown during active chat sessions.
+
+### Copy Button Redesign
+
+The original copy button was below the bubble in a grid-collapse container. Problems:
+1. The grid-rows collapse occasionally flickered.
+2. The button being in-flow made the bubble narrower than the sources row below it.
+
+Final design: `absolute -right-7 top-3` — floats completely outside the bubble's right edge. Zero layout impact. `pt-2 pb-4 px-1` padding for a larger hit area. Icon-only (no "Copy" text label).
+
+### UnicornBackground Fix
+
+After navigating to chat and back to home, the Unicorn animation wasn't resuming. Root cause: `hidden` (Tailwind = `display:none`) pauses WebGL `requestAnimationFrame` loops. The element was removed from the render tree. When `display` was restored, UnicornStudio didn't auto-resume.
+
+Fix: replaced `hidden` with `opacity-0/opacity-100` + `transition-opacity duration-500`. The canvas always renders — just invisible during chat. Bonus: smooth fade transition between home and chat.
+
+### nginx + HTTPS + DuckDNS
+
+**DuckDNS**: Registered `meridian-pi.duckdns.org` pointing to `192.168.1.45`. Public DNS resolves to local IP — works on LAN, unreachable from internet (no port forwarding needed, by design).
+
+**nginx**: Configured as reverse proxy. `meridian-pi.duckdns.org` → port 3000 (frontend) and `/api/` → port 8000 (uvicorn). Port 80/443 — no port number needed in URLs. Coexists with existing n8n config on `mochasuc.mooo.com`.
+
+**Let's Encrypt**: HTTP challenge fails because Pi isn't internet-accessible. Used DNS challenge via `certbot-dns-duckdns` plugin (installed with `--break-system-packages` on Debian's externally-managed Python). DuckDNS token authenticates the TXT record update. Valid cert obtained for `meridian-pi.duckdns.org`.
+
+**Mixed content fix**: Once on HTTPS, `http://192.168.1.45:8000` API calls were blocked as mixed content. `lib/api.ts` now checks `window.location.protocol`: over HTTPS uses same-origin URL (nginx proxies `/api/` on port 443 internally), over HTTP uses direct `:8000`.
+
+### Server-Side Chat Persistence
+
+**Problem**: `localStorage` is per-origin. `192.168.1.45:3000` and `meridian-pi.duckdns.org` are different origins — chats created on one are invisible on the other.
+
+**Solution**: New `chats.db` SQLite database (separate from `knowledge.db`) with a single `chats` table. `api/chat_db.py` owns all CRUD. Four new routes: `GET /api/chats`, `POST /api/chats`, `DELETE /api/chats/{id}`, `PATCH /api/chats/{id}` (rename).
+
+Frontend strategy preserved the existing synchronous `loadChats()` interface (Sidebar.tsx needed no structural changes). New `initChatsFromServer()` async function populates the in-memory `_chatsCache` from the API. `saveChat`, `deleteChat`, `renameChat` update cache + fire-and-forget API call. `localStorage` chat storage removed entirely.
+
+Result: one source of truth on the Pi. Any device, any origin, same chat history. Persists across API restarts.
+
+11. **API URL detection**: `lib/api.ts` checks `window.location.protocol`. Over HTTPS (nginx) uses same-origin so nginx proxies `/api/` internally. Over HTTP uses direct `:8000`. Never hardcode the API URL.
+
+12. **Pi deployment**: nginx on ports 80/443, proxies frontend (3000) and API (8000). SSL via Let's Encrypt DNS challenge (`certbot-dns-duckdns`). DuckDNS hostname resolves to local Pi IP — works on LAN only. Pi `start.sh` adds `--host 0.0.0.0` to uvicorn and sets `GOOGLE_APPLICATION_CREDENTIALS`.
+
+13. **CORS**: includes `https://.*\.duckdns\.org` regex and private IP ranges. `PrivateNetworkMiddleware` adds `Access-Control-Allow-Private-Network: true` for Chrome PNA. `.local` mDNS hostnames are classified as "local" (stricter than private) by Chrome and cannot be fixed without HTTPS.

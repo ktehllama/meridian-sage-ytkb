@@ -3,11 +3,12 @@
  * Typed fetch functions for the Sage Chat FastAPI backend.
  */
 
-const API_URL =
+const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ||
   (typeof window !== 'undefined'
     ? `http://${window.location.hostname}:8000`
-    : 'http://localhost:8000');
+    : 'http://localhost:8000')
+).replace(/\/$/, '');
 
 if (typeof window !== 'undefined') {
   console.log('[Meridian] API_URL:', API_URL);

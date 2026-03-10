@@ -6,7 +6,9 @@
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ||
   (typeof window !== 'undefined'
-    ? `http://${window.location.hostname}:8000`
+    ? window.location.protocol === 'https:'
+      ? `https://${window.location.hostname}`   // behind nginx — /api/ proxied on 443
+      : `http://${window.location.hostname}:8000` // direct to uvicorn over HTTP
     : 'http://localhost:8000')
 ).replace(/\/$/, '');
 

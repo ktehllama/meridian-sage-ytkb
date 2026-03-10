@@ -72,7 +72,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
     ],
-    allow_origin_regex=r"https://.*\.vercel\.app|http://.*\.local:\d+|http://.*\.lan:\d+|http://.*\.duckdns\.org:\d+|http://192\.168\.\d+\.\d+:\d+|http://10\.\d+\.\d+\.\d+:\d+|http://172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:\d+",
+    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.duckdns\.org|http://.*\.duckdns\.org:\d+|http://.*\.local:\d+|http://.*\.lan:\d+|http://192\.168\.\d+\.\d+:\d+|http://10\.\d+\.\d+\.\d+:\d+|http://172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -135,7 +135,6 @@ function revealWords(
       clearInterval(interval);
       intervalRef.current = null;
       dispatch({ type: 'SET_SOURCES', id: msgId, sources });
-      dispatch({ type: 'SET_LOADING', loading: false });
       dispatch({ type: 'INCREMENT_TURNS' });
     }
   }, 30);
@@ -238,6 +237,7 @@ export default function ChatInterface() {
           ? { ...response.usage, cost_usd: costUsd }
           : undefined;
         dispatch({ type: 'ADD_ASSISTANT_MSG', id: assistantMsgId, usage: usageForMsg });
+        dispatch({ type: 'SET_LOADING', loading: false });
 
         // Small pause so the empty bubble appears before words start appearing
         await new Promise((r) => setTimeout(r, 80));
@@ -333,7 +333,7 @@ export default function ChatInterface() {
           {/* Center — model name */}
           {modelName && (
             <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
-              <span className="text-xs font-medium bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+              <span className="text-sm font-bold bg-gradient-to-r from-violet-400 via-indigo-400 to-[#BBC7FD] bg-clip-text text-transparent tracking-tight">
                 {modelName}
               </span>
             </div>

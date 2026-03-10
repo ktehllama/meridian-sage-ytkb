@@ -70,8 +70,12 @@ uvicorn api.main:app --port 8000 &
 API_PID=$!
 
 # ── Start frontend ───────────────────────────────────────────────────────────
-echo "[start.sh] Starting frontend (npm $NPM_CMD)..."
 cd "$ROOT/sage_chat"
+if [[ "$NPM_CMD" == "start" && ! -f ".next/BUILD_ID" ]]; then
+  echo "[start.sh] No production build found — building now (this takes ~30s)..."
+  npm run build
+fi
+echo "[start.sh] Starting frontend (npm $NPM_CMD)..."
 npm "$NPM_CMD" &
 FRONTEND_PID=$!
 

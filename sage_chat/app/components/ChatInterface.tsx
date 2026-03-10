@@ -341,8 +341,8 @@ export default function ChatInterface() {
         <header className="relative flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)] flex-shrink-0 bg-[var(--bg-base)]">
           {/* Center — model name */}
           {modelName && state.messages.length > 0 && (
-            <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
-              <span className="text-sm font-bold bg-gradient-to-r from-violet-400 via-indigo-400 to-[#BBC7FD] bg-clip-text text-transparent tracking-tight">
+            <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none hidden md:block">
+              <span className="text-sm font-bold tracking-tight text-[var(--text-dim)] hover:bg-gradient-to-r hover:from-violet-400 hover:via-indigo-400 hover:to-[#BBC7FD] hover:bg-clip-text hover:text-transparent transition-colors pointer-events-auto">
                 {modelName}
               </span>
             </div>

@@ -147,7 +147,7 @@ const MessageList = React.memo(function MessageList({ messages, loading, onSugge
       {/* UnicornBackground — always mounted, never unmounts.
           Hiding with CSS preserves the WebGL context and prevents
           accumulating render loops on each home↔chat navigation. */}
-      <div className={`absolute inset-0 pointer-events-none${messages.length === 0 && !loading ? '' : ' hidden'}`}>
+      <div className={`absolute inset-0 pointer-events-none transition-opacity duration-500${messages.length === 0 && !loading ? ' opacity-100' : ' opacity-0'}`}>
         <UnicornBackground />
       </div>
 

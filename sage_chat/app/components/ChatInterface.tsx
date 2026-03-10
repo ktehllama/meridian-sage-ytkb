@@ -331,7 +331,7 @@ export default function ChatInterface() {
         {/* Top bar */}
         <header className="relative flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)] flex-shrink-0 bg-[var(--bg-base)]">
           {/* Center — model name */}
-          {modelName && (
+          {modelName && state.messages.length > 0 && (
             <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
               <span className="text-sm font-bold bg-gradient-to-r from-violet-400 via-indigo-400 to-[#BBC7FD] bg-clip-text text-transparent tracking-tight">
                 {modelName}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducer, useCallback, useEffect, useRef, useState } from 'react';
-import { chat, getHealth, initChatsFromServer, Message, Source, ApiError, calcCost, getBudgetSpent, addBudgetSpent, getBudgetCap, setBudgetCap, loadChats, saveChat, deleteChat, renameChat, newChatId, StoredChat, formatModelName } from '../../lib/api';
+import { chat, getHealth, initChatsFromServer, initBudgetFromServer, Message, Source, ApiError, calcCost, getBudgetSpent, addBudgetSpent, getBudgetCap, setBudgetCap, loadChats, saveChat, deleteChat, renameChat, newChatId, StoredChat, formatModelName } from '../../lib/api';
 import MessageList, { ChatMessage } from './MessageList';
 import { generateChatName } from '../../lib/chatName';
 import ChatInput from './ChatInput';
@@ -165,6 +165,10 @@ export default function ChatInterface() {
     };
     tryHealth();
     initChatsFromServer().catch(() => {});
+    initBudgetFromServer().then(() => {
+      setTotalSpent(getBudgetSpent());
+      setBudgetCapState(getBudgetCap());
+    }).catch(() => {});
   }, []);
   const [settingsOpen, setSettingsOpen] = useState(false);
 

@@ -1,5 +1,5 @@
 # Meridian YTKB — Complete Development History
-*Every session, every decision, every bug, every fix — from first commit to v3.8 stable.*
+*Every session, every decision, every bug, every fix — from first commit to v4.0 stable.*
 *Written to give a new Claude session complete context. Read top to bottom.*
 
 ---
@@ -1347,18 +1347,32 @@ This session focused entirely on production readiness: getting Meridian running 
 
 **Gemini credentials on Pi**: API calls failed with `403 PERMISSION_DENIED`. The Pi had no Application Default Credentials. Fixed by creating a GCP service account key file (`gcp-key.json`) and setting `GOOGLE_APPLICATION_CREDENTIALS` in `start.sh`. Granted the service account the `Vertex AI User` IAM role.
 
-**Gemini 2.5 Flash**: User tested `gemini-2.5-flash` (without preview suffix) and found it worked on the Pi. However, `gemini-2.0-flash` proved more reliable for structured prompt-following (query expansion), so 2.0 Flash remained the default.
+### Gemini 2.0 Flash vs 2.5 Flash — The Finding
+
+During this session the user tested both models extensively on real queries. **Gemini 2.0 Flash was conclusively better for this use case** — not 2.5 Flash despite being the newer model.
+
+Why 2.0 Flash wins here:
+- **Structured output compliance**: `expand_query` uses an explicit "exactly 4 lines" format. Gemini 2.0 Flash follows this reliably at `temperature=0.4`. Gemini 2.5 Flash would occasionally rephrase the instructions or add extra commentary.
+- **Query preservation**: 2.5 Flash was more aggressive about "improving" the user's query — sometimes changing meaning while trying to correct style. 2.0 Flash makes surgical typo fixes only, leaves phrasing alone.
+- **Speed**: 2.0 Flash is faster at short structured tasks — query expansion typically returns in 300-600ms vs 800-1200ms for 2.5.
+
+The lesson: **newer model ≠ better model for every task**. For tightly-constrained structured prompts (fix typos, generate paraphrases, follow a strict line format), smaller/faster models that excel at instruction following beat larger reasoning models. Save the big models for synthesis and complex judgment calls.
+
+`gemini-2.0-flash` stayed as the default in `GEMINI_MODEL` env var.
 
 ### Query Expansion + Typo Correction
 
 The original `expand_query` function sent a single prompt asking for 3 paraphrases with no typo correction. Issues discovered:
 
-1. The 200-token limit was being hit — only 1 variant returned, second cut off mid-sentence.
-2. Adding typo correction to the same prompt caused Gemini to destroy the query (returned "what" for a full sentence at `temperature=0.0`).
+1. **200-token limit truncation**: only 1 variant returned, second cut off mid-sentence ("What is one sentence to..."). Bumped to 400 tokens.
+2. **Two-call typo correction destroyed queries**: a dedicated `_correct_query()` call at `temperature=0.0` returned "what" for the full sentence "what is the best way to hire engineers" — too aggressive. The model treated "correct" as "rewrite to minimal form".
+3. **Single merged call solved both**: one prompt at `temperature=0.4` with format "Line 1: typo-corrected query (spelling only, nothing else changed). Lines 2-4: paraphrases of line 1." Gemini follows this cleanly. Typos like "claude coed" → "claude code" get fixed; correct queries are passed through untouched.
 
-Solution: single call with explicit line format — "line 1: corrected query, lines 2-4: paraphrases" at `temperature=0.4`, 400-token budget. The original (possibly typo'd) query is always prepended as the first variant. `expand_query` now returns `(variants, usage)` tuple.
+The original (possibly typo'd) query is always appended as the final variant — so even if expansion fails, the raw query still runs. `expand_query` now returns `(variants, usage_metadata)` tuple.
 
-**Accurate cost tracking**: Expansion call tokens were never counted. `expand_query` now returns `usage_metadata` from its Gemini response. `api/main.py` sums expansion + synthesis tokens before building `UsageInfo`. Displayed cost is now the true total.
+**Why typo correction matters for search**: ChromaDB uses cosine similarity on sentence embeddings. "coed" and "code" embed very differently — the query `claude coed` would match chunks about education/coeducation before chunks about Claude Code. One line-1 correction dramatically improves the top result quality.
+
+**Accurate cost tracking**: Expansion call tokens were never counted — only synthesis was. `expand_query` now returns `usage_metadata` from its Gemini response. `api/main.py` sums expansion + synthesis prompt/completion tokens before building `UsageInfo`. Displayed cost in the bubble footer is now the true end-to-end total per query.
 
 ### Model Name in Header
 
@@ -1403,3 +1417,95 @@ Result: one source of truth on the Pi. Any device, any origin, same chat history
 12. **Pi deployment**: nginx on ports 80/443, proxies frontend (3000) and API (8000). SSL via Let's Encrypt DNS challenge (`certbot-dns-duckdns`). DuckDNS hostname resolves to local Pi IP — works on LAN only. Pi `start.sh` adds `--host 0.0.0.0` to uvicorn and sets `GOOGLE_APPLICATION_CREDENTIALS`.
 
 13. **CORS**: includes `https://.*\.duckdns\.org` regex and private IP ranges. `PrivateNetworkMiddleware` adds `Access-Control-Allow-Private-Network: true` for Chrome PNA. `.local` mDNS hostnames are classified as "local" (stricter than private) by Chrome and cannot be fixed without HTTPS.
+
+---
+
+## Current State: v4.0 — Meridian Lives Everywhere
+
+### Where things stand
+
+Meridian Sage is fully deployed and working on:
+- `meridian-pi.duckdns.org` — clean HTTPS URL, works on any LAN device (phone, tablet, PC)
+- `192.168.1.45:3000` — direct IP access on LAN
+- `localhost:3000` — local dev on the PC
+
+All three share the same chat history (`chats.db` on the Pi), the same knowledge base (249K+ chunks), and the same Gemini 2.0 Flash model. Versions stay in sync via GitHub — pull on Pi, restart, done.
+
+### The `/wise-practices` skill
+
+After finishing the deployment work, the accumulated lessons from building Meridian were distilled into a reusable Claude Code global skill at `~/.claude/commands/wise-practices.md`. Invoked with `/wise-practices` in any project, it loads a reference of hard-won patterns:
+
+- CSS layout traps (flex height collapse, grid overlay, floating UI, hover dropdown close bug, scrollbar scroll-wheel mismatch)
+- React patterns (useReducer, useCallback dep arrays, SSR hydration, always-mounted WebGL, AbortController, React.memo)
+- FastAPI patterns (centralized config, lifespan, CORS regex, Private Network middleware, read-only SQLite, parameterized SQL)
+- Deployment ops (UTF-8 gitignore, GitHub orphan branch for large file history, bash startup scripts, LAN HTTPS chain)
+- LLM integration (query expansion, single-call typo correction, token counting, health retry, citation preprocessing)
+- Theming (CSS variable tokens, warm cream light mode, anti-flash script)
+
+The point: these patterns aren't Meridian-specific. They apply to any Next.js/FastAPI/React/SQLite project. The skill means future projects won't rediscover the same traps.
+
+### What's left
+
+The app is feature-complete for its core purpose. Remaining work:
+
+| # | What | Notes |
+|---|------|-------|
+| Telegram bot | Replace CLI (`pipeline.py add-channel`, `sync`, `status`) with a bot running on Pi | Makes KB updates possible from phone without SSH |
+| Profiles | Per-profile knowledge base scope | Profiles exist in UI but don't affect search |
+| Light mode | Full light theme pass | CSS token system is in place, just needs component audit |
+| Unicorn canvas bg | Match `--bg-base` in light mode | Blocked on Service Worker / Unicorn Studio JS API research |
+| More KB content | More channels beyond current ~80 | Telegram bot makes this easier |
+
+The database question is solved: the Pi IS the single source of truth. `knowledge.db` + `yc_vectors/` + `chats.db` all live there. Every client hits the same API. The only remaining gap is adding content without SSH — that's the Telegram bot.
+
+---
+
+## Session 13 — 2026-03-10: Mobile Fixes + Cross-Device Budget (v4.1)
+
+### The three bugs
+
+First time using Meridian from a phone revealed issues:
+
+1. **Hero screen overflow**: the title + subtitle + suggestion chips required scrolling on mobile. The floating chat bar covers the lower ~80px of the viewport. The old `py-10` (40px top + 40px bottom) was symmetric, but the effective visible area is much shorter because the floating bar occludes the bottom. The content was visually overflowing below the bar.
+
+2. **"+ New Chat" not working on mobile**: tapping the button in the sidebar did nothing — the chat didn't clear. The Sidebar has a full-screen backdrop `div` with `onClick={onClose}` at `z-30`, and the panel `aside` at `z-40`. On desktop, a click inside the `aside` never reaches the backdrop. On mobile touch events, propagation still fires. The tap reached the backdrop's `onClose` before the button's handler, closing the sidebar without clearing the chat.
+
+3. **Budget not synced across devices**: `getBudgetSpent()` read from `localStorage`. Different origins have different localStorage namespaces. PC showed `$299.99577` spent; phone showed `$0` spent (fresh `$300` budget). Every new device would always start with a full budget.
+
+### Fixes
+
+**Fix 1 — `MessageList.tsx`**
+
+Changed hero container padding from `py-10` to `pt-4 pb-28 md:pt-10 md:pb-10`:
+- `pt-4` (16px): less top breathing room on mobile
+- `pb-28` (112px): pushes content above the floating bar (~80px height + margin)
+- `md:` prefix restores original values on desktop
+
+Also shrunk the title from `text-5xl` to `text-4xl md:text-5xl` so it fits without wrapping awkwardly on small screens.
+
+**Fix 2 — `Sidebar.tsx`**
+
+Added `e.stopPropagation()` to the New Chat button's `onClick`:
+```tsx
+// Before:
+onClick={() => { onNewChat?.(); onClose(); }}
+// After:
+onClick={(e) => { e.stopPropagation(); onNewChat?.(); onClose(); }}
+```
+
+The backdrop still handles genuine outside taps. Taps inside the panel no longer reach it.
+
+**Fix 3 — Cross-device budget sync**
+
+Reused the existing `chats.db` with a new `settings` key-value table. Same pattern as chat persistence — server is source of truth, frontend cache + fire-and-forget updates.
+
+Backend:
+- `api/chat_db.py`: `settings` table added to `init_db()` alongside `chats`. `get_setting(key, default)` and `set_setting(key, value)` helpers.
+- `api/models.py`: `BudgetResponse(spent, cap)` and `BudgetRequest(spent?, cap?)` Pydantic models.
+- `api/main.py`: `GET /api/budget` returns `{spent, cap}` from settings. `PUT /api/budget` accepts partial updates — can update spent, cap, or both.
+
+Frontend:
+- `lib/api.ts`: `_budgetSpent: number | null` in-memory cache (avoids localStorage re-read on every render). `initBudgetFromServer()` fetches server value and populates cache. `addBudgetSpent()` updates cache + localStorage immediately, fire-and-forgets `PUT /api/budget` in background. `getBudgetSpent()` checks cache first before falling back to localStorage.
+- `ChatInterface.tsx`: `initBudgetFromServer()` called in mount `useEffect` alongside `initChatsFromServer()`. On resolve, updates the `totalSpent` and `budgetCap` UI state to reflect server values.
+
+The existing `$299.99577` value on the Pi persists in memory/localStorage — first time the Pi API restarts with the new `settings` table, the budget starts at `0` until the PC does a query (which fires `PUT /api/budget` with the real value). If needed, can seed manually: `INSERT INTO settings VALUES ('budget_spent', '0.00423')` in the Pi's `chats.db`.

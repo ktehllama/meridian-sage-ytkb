@@ -156,7 +156,7 @@ export default function Sidebar({ isOpen, onClose, onVideoSelect, onRestoreChat,
             {/* New Chat button */}
             <div className="px-3 pt-3 pb-2 border-b border-[var(--bg-hover)]">
               <button
-                onClick={() => { onNewChat?.(); onClose(); }}
+                onClick={(e) => { e.stopPropagation(); onNewChat?.(); onClose(); }}
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[var(--border-primary)] text-xs text-[var(--text-dim)] hover:border-indigo-500/40 hover:text-indigo-400 transition-all"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

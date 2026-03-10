@@ -23,6 +23,8 @@ from api import gemini as gemini_module
 from api import websearch as websearch_module
 from api import chat_db as chat_db_module
 from api.models import (
+    BudgetRequest,
+    BudgetResponse,
     ChatRequest,
     ChatResponse,
     ChannelItem,
@@ -281,3 +283,24 @@ async def delete_chat(chat_id: str):
 async def rename_chat(chat_id: str, req: RenameChatRequest):
     """Rename a chat."""
     chat_db_module.rename_chat(chat_id, req.name)
+
+
+# ─────────────────────────────────────────────────────────────
+# Budget tracking
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/api/budget", response_model=BudgetResponse)
+async def get_budget():
+    """Return current budget spent and cap from server-side settings."""
+    spent = float(chat_db_module.get_setting("budget_spent", "0"))
+    cap = float(chat_db_module.get_setting("budget_cap", "300"))
+    return BudgetResponse(spent=spent, cap=cap)
+
+
+@app.put("/api/budget", status_code=204)
+async def put_budget(req: BudgetRequest):
+    """Update budget spent and/or cap."""
+    if req.spent is not None:
+        chat_db_module.set_setting("budget_spent", f"{req.spent:.6f}")
+    if req.cap is not None:
+        chat_db_module.set_setting("budget_cap", f"{req.cap:.6f}")

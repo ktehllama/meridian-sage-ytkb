@@ -18,7 +18,7 @@ def _get_conn() -> sqlite3.Connection:
 
 
 def init_db() -> None:
-    """Create chats table and index if they don't exist."""
+    """Create chats and settings tables if they don't exist."""
     with _get_conn() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS chats (
@@ -32,8 +32,26 @@ def init_db() -> None:
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_chats_saved_at ON chats(saved_at)"
         )
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
         conn.commit()
     logger.info("Chat DB ready.")
+
+
+def get_setting(key: str, default: str = '') -> str:
+    with _get_conn() as conn:
+        row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    return row[0] if row else default
+
+
+def set_setting(key: str, value: str) -> None:
+    with _get_conn() as conn:
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)", (key, value))
+        conn.commit()
 
 
 def upsert_chat(id: str, name: str, mode: str, messages: list, saved_at: int) -> None:

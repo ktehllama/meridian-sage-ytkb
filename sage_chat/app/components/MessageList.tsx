@@ -153,7 +153,7 @@ const MessageList = React.memo(function MessageList({ messages, loading, onSugge
 
       {messages.length === 0 && !loading ? (
         /* Home view */
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-8 py-10">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-8 pt-4 pb-28 md:pt-10 md:pb-10">
           {/* Content */}
           <div className="relative z-10 flex flex-col items-center w-full">
             {/* Dark radial vignette behind text */}
@@ -173,7 +173,7 @@ const MessageList = React.memo(function MessageList({ messages, loading, onSugge
             <div className="relative flex flex-col items-center w-full">
               {/* Gradient title */}
               <h1
-                className="text-5xl font-bold mb-2 leading-tight"
+                className="text-4xl md:text-5xl font-bold mb-2 leading-tight"
                 style={{
                   background: 'linear-gradient(135deg, #818cf8 0%, #a5b4fc 50%, #c7d2fe 100%)',
                   WebkitBackgroundClip: 'text',

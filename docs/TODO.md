@@ -1,6 +1,12 @@
 # Sage YTKB — TODO & Pending Work
 
-_Last updated: 2026-03-06_
+_Last updated: 2026-03-10_
+
+---
+
+## ⚠️ High Priority
+
+- [ ] Build Telegram bot to replace CLI tool (`add-channel`, `sync`, `status`, etc.) — eventually make one source of truth DB (Pi), always add to that
 
 ---
 

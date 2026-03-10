@@ -2,6 +2,23 @@
 
 ---
 
+## 2026-03-10 — Mobile Hero + New Chat Fix + Server-Side Budget (v4.1)
+
+### Fixed
+- **Mobile hero padding** (`MessageList.tsx`) — hero container was `py-10` (symmetric). On mobile, the floating chat bar covers the lower ~80px, shifting the visual center up. Changed to `pt-4 pb-28` on mobile, `md:pt-10 md:pb-10` on desktop. Title also shrinks from `text-5xl` to `text-4xl md:text-5xl` so it fits without overflow.
+- **"+ New Chat" on mobile** (`Sidebar.tsx`) — tap on the New Chat button was propagating to the full-screen backdrop (`onClick={onClose}`), firing `onClose` before the button's own handler. Added `e.stopPropagation()` to the button's `onClick` — backdrop tap still closes sidebar, but taps inside the panel don't reach the backdrop.
+- **Budget synced across devices** — budget spent was stored in `localStorage` per-origin, so phone always started at $300 while PC showed $299.99. Now stored server-side:
+  - `api/chat_db.py` — added `settings` table (key-value) to `chats.db`, plus `get_setting()`/`set_setting()` helpers
+  - `api/models.py` — added `BudgetResponse` and `BudgetRequest` Pydantic models
+  - `api/main.py` — added `GET /api/budget` and `PUT /api/budget` routes
+  - `sage_chat/lib/api.ts` — added `_budgetSpent` in-memory cache, `initBudgetFromServer()` async init, `addBudgetSpent()` now fire-and-forgets `PUT /api/budget` on every query
+  - `sage_chat/app/components/ChatInterface.tsx` — calls `initBudgetFromServer()` on mount, updates UI state after server values load
+
+### Result
+Any device accessing Meridian sees the same remaining budget. Spend $5 on the phone → laptop shows the same $5 spent, not a fresh $300.
+
+---
+
 ## 2026-03-10 — Server-Side Chat Persistence
 
 ### Added

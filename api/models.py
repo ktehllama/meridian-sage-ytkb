@@ -87,3 +87,13 @@ class RandomFactResponse(BaseModel):
     excerpt: str
     timestamp_str: str
     url: str
+
+
+class BudgetResponse(BaseModel):
+    spent: float
+    cap: float
+
+
+class BudgetRequest(BaseModel):
+    spent: float | None = None
+    cap: float | None = None

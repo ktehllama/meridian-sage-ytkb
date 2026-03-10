@@ -168,13 +168,32 @@ const BUDGET_KEY = 'sage_budget_spent';
 const BUDGET_CAP_KEY = 'sage_budget_cap';
 const DEFAULT_BUDGET = 300;
 
+let _budgetSpent: number | null = null;
+
+export async function initBudgetFromServer(): Promise<void> {
+  try {
+    const res = await fetch(`${API_URL}/api/budget`);
+    if (!res.ok) return;
+    const data = await res.json();
+    _budgetSpent = data.spent;
+    try { localStorage.setItem(BUDGET_KEY, data.spent.toFixed(6)); } catch {}
+  } catch {}
+}
+
 export function getBudgetSpent(): number {
+  if (_budgetSpent !== null) return _budgetSpent;
   try { return parseFloat(localStorage.getItem(BUDGET_KEY) ?? '0') || 0; } catch { return 0; }
 }
 
 export function addBudgetSpent(cost: number): number {
   const total = getBudgetSpent() + cost;
+  _budgetSpent = total;
   try { localStorage.setItem(BUDGET_KEY, total.toFixed(6)); } catch {}
+  fetch(`${API_URL}/api/budget`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ spent: total }),
+  }).catch(() => {});
   return total;
 }
 

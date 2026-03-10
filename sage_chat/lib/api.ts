@@ -9,6 +9,10 @@ const API_URL =
     ? `http://${window.location.hostname}:8000`
     : 'http://localhost:8000');
 
+if (typeof window !== 'undefined') {
+  console.log('[Meridian] API_URL:', API_URL);
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface Message {
@@ -85,6 +89,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
     } catch {
       // ignore parse error
     }
+    console.error('[Meridian] API error:', response.status, response.url, detail);
     throw new ApiError(detail, response.status);
   }
   return response.json() as Promise<T>;

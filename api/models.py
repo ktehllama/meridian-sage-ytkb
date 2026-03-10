@@ -69,6 +69,18 @@ class HealthResponse(BaseModel):
     model: str = ""
 
 
+class StoredChatRequest(BaseModel):
+    id: str
+    name: str
+    mode: str
+    messages: list
+    saved_at: int
+
+
+class RenameChatRequest(BaseModel):
+    name: str
+
+
 class RandomFactResponse(BaseModel):
     title: str
     channel: str

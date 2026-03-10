@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getVideos, getChannels, VideoItem, ChannelItem, formatDuration, loadChats, StoredChat } from '../../lib/api';
+import { getVideos, getChannels, VideoItem, ChannelItem, formatDuration, loadChats, initChatsFromServer, StoredChat } from '../../lib/api';
 import { ALL_CATEGORIES, getCategoryForChannel } from '../../lib/channelCategories';
 
 interface SidebarProps {
@@ -55,10 +55,12 @@ export default function Sidebar({ isOpen, onClose, onVideoSelect, onRestoreChat,
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
 
-  // Load saved chats from localStorage when sidebar opens
+  // Load saved chats from server when sidebar opens
   useEffect(() => {
     if (!isOpen) return;
-    setSavedChats(loadChats());
+    initChatsFromServer()
+      .then(() => setSavedChats(loadChats()))
+      .catch(() => setSavedChats(loadChats()));
   }, [isOpen]);
 
   // Load channels and all-channels total count on open

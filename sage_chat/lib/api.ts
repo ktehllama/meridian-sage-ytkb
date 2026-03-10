@@ -188,8 +188,6 @@ export function setBudgetCap(cap: number): void {
 
 // ── Chat storage ───────────────────────────────────────────────────────────
 
-const CHATS_KEY = 'sage_chats';
-
 export interface StoredChat {
   id: string;
   name: string;
@@ -198,42 +196,47 @@ export interface StoredChat {
   savedAt: number;
 }
 
-// In-memory cache — avoids re-parsing localStorage on every save
+// In-memory cache — populated from server on initChatsFromServer()
 let _chatsCache: StoredChat[] | null = null;
 
 export function loadChats(): StoredChat[] {
-  if (_chatsCache !== null) return _chatsCache;
+  return _chatsCache ?? [];
+}
+
+export async function initChatsFromServer(): Promise<void> {
   try {
-    const raw = localStorage.getItem(CHATS_KEY);
-    _chatsCache = raw ? JSON.parse(raw) : [];
-    return _chatsCache!;
+    const response = await fetch(`${API_URL}/api/chats`);
+    if (response.ok) {
+      _chatsCache = await response.json();
+    }
   } catch {
-    _chatsCache = [];
-    return [];
+    // server unreachable — cache stays empty, app still usable
   }
 }
 
 export function saveChat(chat: StoredChat): void {
-  try {
-    const chats = loadChats().filter(c => c.id !== chat.id);
-    chats.unshift(chat); // newest first
-    _chatsCache = chats.slice(0, 50); // cap at 50
-    localStorage.setItem(CHATS_KEY, JSON.stringify(_chatsCache));
-  } catch {}
+  const chats = (_chatsCache ?? []).filter(c => c.id !== chat.id);
+  chats.unshift(chat);
+  _chatsCache = chats.slice(0, 50);
+  fetch(`${API_URL}/api/chats`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...chat, saved_at: chat.savedAt }),
+  }).catch(() => {});
 }
 
 export function deleteChat(id: string): void {
-  try {
-    _chatsCache = loadChats().filter(c => c.id !== id);
-    localStorage.setItem(CHATS_KEY, JSON.stringify(_chatsCache));
-  } catch {}
+  _chatsCache = (_chatsCache ?? []).filter(c => c.id !== id);
+  fetch(`${API_URL}/api/chats/${id}`, { method: 'DELETE' }).catch(() => {});
 }
 
 export function renameChat(id: string, name: string): void {
-  try {
-    _chatsCache = loadChats().map(c => c.id === id ? { ...c, name } : c);
-    localStorage.setItem(CHATS_KEY, JSON.stringify(_chatsCache));
-  } catch {}
+  _chatsCache = (_chatsCache ?? []).map(c => c.id === id ? { ...c, name } : c);
+  fetch(`${API_URL}/api/chats/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  }).catch(() => {});
 }
 
 export function newChatId(): string {

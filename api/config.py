@@ -19,6 +19,7 @@ class Config:
     GEMINI_MODEL: str
     BM25_CACHE_PATH: str
     LLM_PROVIDER: str  # "gemini" | future: "anthropic", "openai", ...
+    CHATS_DB_PATH: str
 
 
 def _load() -> Config:
@@ -31,6 +32,7 @@ def _load() -> Config:
         GEMINI_MODEL=os.environ.get("GEMINI_MODEL", "gemini-2.0-flash"),
         BM25_CACHE_PATH=os.environ.get("BM25_CACHE_PATH", "./bm25_cache.pkl"),
         LLM_PROVIDER=os.environ.get("LLM_PROVIDER", "gemini"),
+        CHATS_DB_PATH=os.environ.get("CHATS_DB_PATH", "./chats.db"),
     )
 
 

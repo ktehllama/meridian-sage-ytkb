@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api import search as search_module
 from api import gemini as gemini_module
 from api import websearch as websearch_module
+from api import chat_db as chat_db_module
 from api.models import (
     ChatRequest,
     ChatResponse,
@@ -28,7 +29,9 @@ from api.models import (
     ChannelListResponse,
     HealthResponse,
     RandomFactResponse,
+    RenameChatRequest,
     Source,
+    StoredChatRequest,
     UsageInfo,
     VideoItem,
     VideoListResponse,
@@ -46,6 +49,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Initialise search engine on startup. Fail fast if ChromaDB is unreachable."""
     logger.info("Sage Chat API starting up ...")
+    chat_db_module.init_db()
     try:
         search_module.init_search()
         logger.info("Search engine ready.")
@@ -249,3 +253,31 @@ async def health() -> HealthResponse:
         db_videos=search_module.get_db_video_count(),
         model=api_config.GEMINI_MODEL,
     )
+
+
+# ─────────────────────────────────────────────────────────────
+# Chat persistence
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/api/chats")
+async def get_chats():
+    """List all saved chats, newest first."""
+    return chat_db_module.list_chats()
+
+
+@app.post("/api/chats", status_code=204)
+async def upsert_chat(req: StoredChatRequest):
+    """Create or update a chat."""
+    chat_db_module.upsert_chat(req.id, req.name, req.mode, req.messages, req.saved_at)
+
+
+@app.delete("/api/chats/{chat_id}", status_code=204)
+async def delete_chat(chat_id: str):
+    """Delete a chat by ID."""
+    chat_db_module.delete_chat(chat_id)
+
+
+@app.patch("/api/chats/{chat_id}", status_code=204)
+async def rename_chat(chat_id: str, req: RenameChatRequest):
+    """Rename a chat."""
+    chat_db_module.rename_chat(chat_id, req.name)

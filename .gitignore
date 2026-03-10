@@ -33,3 +33,4 @@ LATESTCLAUDECHAT.md
 # Build artifacts
 **/__pycache__/
 sage_chat/tsconfig.tsbuildinfo
+sage_chat/.env.local

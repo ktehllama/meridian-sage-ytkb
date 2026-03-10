@@ -177,6 +177,7 @@ export async function initBudgetFromServer(): Promise<void> {
     const data = await res.json();
     _budgetSpent = data.spent;
     try { localStorage.setItem(BUDGET_KEY, data.spent.toFixed(6)); } catch {}
+    try { localStorage.setItem(BUDGET_CAP_KEY, data.cap.toFixed(5)); } catch {}
   } catch {}
 }
 
@@ -203,6 +204,11 @@ export function getBudgetCap(): number {
 
 export function setBudgetCap(cap: number): void {
   try { localStorage.setItem(BUDGET_CAP_KEY, cap.toFixed(5)); } catch {}
+  fetch(`${API_URL}/api/budget`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cap }),
+  }).catch(() => {});
 }
 
 // ── Chat storage ───────────────────────────────────────────────────────────

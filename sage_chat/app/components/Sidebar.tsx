@@ -13,6 +13,7 @@ interface SidebarProps {
   onRenameChat?: (id: string, name: string) => void;
   onNewChat?: () => void;
   activeChatId?: string | null;
+  hasMessages?: boolean;
 }
 
 function relativeTime(ts: number): string {
@@ -39,7 +40,7 @@ function relativeTime(ts: number): string {
  * Sidebar — collapsible drawer showing chats, video, and channel browser.
  * Clicking a saved chat restores it. Clicking a video title seeds a new query.
  */
-export default function Sidebar({ isOpen, onClose, onVideoSelect, onRestoreChat, onDeleteChat, onRenameChat, onNewChat, activeChatId }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, onVideoSelect, onRestoreChat, onDeleteChat, onRenameChat, onNewChat, activeChatId, hasMessages }: SidebarProps) {
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [channels, setChannels] = useState<ChannelItem[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<string>('');
@@ -112,12 +113,9 @@ export default function Sidebar({ isOpen, onClose, onVideoSelect, onRestoreChat,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-40" onClick={onClose}>
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" />
-
+    <div className="fixed inset-0 z-40 bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       {/* Drawer */}
-      <aside className="absolute left-0 top-0 h-full w-72 bg-[var(--bg-sidebar)] border-r border-[var(--border-primary)] flex flex-col" onClick={e => e.stopPropagation()}>
+      <aside className="absolute left-0 top-0 h-full w-72 bg-[var(--bg-sidebar)] border-r border-[var(--border-primary)] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--border-primary)]">
           <span className="font-semibold text-sm text-[var(--text-primary)]">Knowledge Base</span>
@@ -150,18 +148,20 @@ export default function Sidebar({ isOpen, onClose, onVideoSelect, onRestoreChat,
 
         {tab === 'chats' && (
           <div className="flex flex-col flex-1 min-h-0">
-            {/* New Chat button */}
-            <div className="px-3 pt-3 pb-2 border-b border-[var(--bg-hover)]">
-              <button
-                onClick={() => { onNewChat?.(); onClose(); }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[var(--border-primary)] text-xs text-[var(--text-dim)] hover:border-indigo-500/40 hover:text-indigo-400 transition-all"
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                New Chat
-              </button>
-            </div>
+            {/* New Chat button — only shown when inside an active chat */}
+            {hasMessages && (
+              <div className="px-3 pt-3 pb-2 border-b border-[var(--bg-hover)]">
+                <button
+                  onClick={() => { onNewChat?.(); onClose(); }}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[var(--border-primary)] text-xs text-[var(--text-dim)] hover:border-indigo-500/40 hover:text-indigo-400 transition-all"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  New Chat
+                </button>
+              </div>
+            )}
 
             {/* Chat list */}
             <div className="flex-1 overflow-y-auto p-2 space-y-1">

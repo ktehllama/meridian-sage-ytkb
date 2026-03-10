@@ -335,6 +335,7 @@ export default function ChatInterface() {
         onRenameChat={handleRenameChat}
         onNewChat={handleNewChat}
         activeChatId={currentChatIdRef.current}
+        hasMessages={state.messages.length > 0}
       />
 
       {/* Settings panel */}
@@ -416,15 +417,6 @@ export default function ChatInterface() {
                 suppressHydrationWarning
               >
                 ${(budgetCap - totalSpent).toFixed(5)} left
-              </button>
-            )}
-
-            {state.messages.length > 0 && (
-              <button
-                onClick={handleNewChat}
-                className="text-xs text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors px-2 py-1 rounded border border-[var(--border-primary)] hover:border-[var(--text-faintest)]"
-              >
-                New Chat
               </button>
             )}
 

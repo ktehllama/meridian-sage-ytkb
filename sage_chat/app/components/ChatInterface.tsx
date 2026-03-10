@@ -342,7 +342,7 @@ export default function ChatInterface() {
           {/* Center — model name */}
           {modelName && state.messages.length > 0 && (
             <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none hidden md:block">
-              <span className="text-sm font-bold tracking-tight text-[var(--text-dim)] hover:bg-gradient-to-r hover:from-violet-400 hover:via-indigo-400 hover:to-[#BBC7FD] hover:bg-clip-text hover:text-transparent transition-colors pointer-events-auto">
+              <span className="text-sm font-bold tracking-tight text-[var(--text-dim)]">
                 {modelName}
               </span>
             </div>

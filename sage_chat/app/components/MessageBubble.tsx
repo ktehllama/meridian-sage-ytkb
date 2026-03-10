@@ -142,7 +142,7 @@ const MessageBubble = React.memo(function MessageBubble({ role, content, sources
         {/* Copy icon — absolutely positioned outside the right edge, no layout impact */}
         <button
           onClick={handleCopy}
-          className="absolute top-3 -right-7 opacity-0 group-hover/bubble:opacity-100 transition-opacity text-[var(--text-dim)] hover:text-[var(--text-secondary)]"
+          className="absolute top-1 -right-7 pb-4 pt-2 px-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity text-[var(--text-dim)] hover:text-[var(--text-secondary)]"
           title={copied ? 'Copied!' : 'Copy response'}
         >
           {copied ? (

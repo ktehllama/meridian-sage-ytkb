@@ -386,7 +386,7 @@ export default function ChatInterface() {
               <button
                 className="text-xs font-mono text-emerald-500 hover:text-emerald-400 transition-colors"
                 title={`$${totalSpent.toFixed(5)} spent — click to edit budget`}
-                onClick={() => { setBudgetInput(budgetCap.toFixed(2)); setEditingBudget(true); }}
+                onClick={() => { setBudgetInput(budgetCap.toFixed(5)); setEditingBudget(true); }}
                 suppressHydrationWarning
               >
                 ${(budgetCap - totalSpent).toFixed(5)} left

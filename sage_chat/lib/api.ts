@@ -174,7 +174,7 @@ export function getBudgetCap(): number {
 }
 
 export function setBudgetCap(cap: number): void {
-  try { localStorage.setItem(BUDGET_CAP_KEY, cap.toFixed(2)); } catch {}
+  try { localStorage.setItem(BUDGET_CAP_KEY, cap.toFixed(5)); } catch {}
 }
 
 // ── Chat storage ───────────────────────────────────────────────────────────

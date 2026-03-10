@@ -389,7 +389,7 @@ export default function ChatInterface() {
                 onClick={() => { setBudgetInput(budgetCap.toFixed(2)); setEditingBudget(true); }}
                 suppressHydrationWarning
               >
-                ${(budgetCap - totalSpent).toFixed(2)} left
+                ${(budgetCap - totalSpent).toFixed(5)} left
               </button>
             )}
 

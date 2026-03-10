@@ -4,7 +4,10 @@
  */
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== 'undefined'
+    ? `http://${window.location.hostname}:8000`
+    : 'http://localhost:8000');
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -153,6 +156,8 @@ export function calcCost(usage: UsageInfo): number {
 }
 
 const BUDGET_KEY = 'sage_budget_spent';
+const BUDGET_CAP_KEY = 'sage_budget_cap';
+const DEFAULT_BUDGET = 300;
 
 export function getBudgetSpent(): number {
   try { return parseFloat(localStorage.getItem(BUDGET_KEY) ?? '0') || 0; } catch { return 0; }
@@ -162,6 +167,14 @@ export function addBudgetSpent(cost: number): number {
   const total = getBudgetSpent() + cost;
   try { localStorage.setItem(BUDGET_KEY, total.toFixed(6)); } catch {}
   return total;
+}
+
+export function getBudgetCap(): number {
+  try { return parseFloat(localStorage.getItem(BUDGET_CAP_KEY) ?? String(DEFAULT_BUDGET)) || DEFAULT_BUDGET; } catch { return DEFAULT_BUDGET; }
+}
+
+export function setBudgetCap(cap: number): void {
+  try { localStorage.setItem(BUDGET_CAP_KEY, cap.toFixed(2)); } catch {}
 }
 
 // ── Chat storage ───────────────────────────────────────────────────────────

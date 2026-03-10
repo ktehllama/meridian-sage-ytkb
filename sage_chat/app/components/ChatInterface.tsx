@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducer, useCallback, useEffect, useRef, useState } from 'react';
-import { chat, Message, Source, ApiError, calcCost, getBudgetSpent, addBudgetSpent, loadChats, saveChat, deleteChat, renameChat, newChatId, StoredChat } from '../../lib/api';
+import { chat, Message, Source, ApiError, calcCost, getBudgetSpent, addBudgetSpent, getBudgetCap, setBudgetCap, loadChats, saveChat, deleteChat, renameChat, newChatId, StoredChat } from '../../lib/api';
 import MessageList, { ChatMessage } from './MessageList';
 import { generateChatName } from '../../lib/chatName';
 import ChatInput from './ChatInput';
@@ -148,7 +148,13 @@ export default function ChatInterface() {
   const [state, dispatch] = useReducer(reducer, initialState);
   // Initialize to 0 (matches server render) then read localStorage on client to avoid SSR mismatch
   const [totalSpent, setTotalSpent] = useState(0);
-  useEffect(() => { setTotalSpent(getBudgetSpent()); }, []);
+  const [budgetCap, setBudgetCapState] = useState(300);
+  const [editingBudget, setEditingBudget] = useState(false);
+  const [budgetInput, setBudgetInput] = useState('');
+  useEffect(() => {
+    setTotalSpent(getBudgetSpent());
+    setBudgetCapState(getBudgetCap());
+  }, []);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -346,13 +352,46 @@ export default function ChatInterface() {
           </div>
 
           <div className="flex items-center gap-3">
-            <span
-              className="text-xs font-mono text-emerald-500"
-              title={`$${totalSpent.toFixed(5)} spent of $300.00 budget`}
-              suppressHydrationWarning
-            >
-              ${(300 - totalSpent).toFixed(5)} left
-            </span>
+            {editingBudget ? (
+              <input
+                autoFocus
+                type="number"
+                min="0"
+                step="0.01"
+                value={budgetInput}
+                onChange={(e) => setBudgetInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const val = parseFloat(budgetInput);
+                    if (!isNaN(val) && val >= 0) {
+                      setBudgetCap(val);
+                      setBudgetCapState(val);
+                    }
+                    setEditingBudget(false);
+                  }
+                  if (e.key === 'Escape') setEditingBudget(false);
+                }}
+                onBlur={() => {
+                  const val = parseFloat(budgetInput);
+                  if (!isNaN(val) && val >= 0) {
+                    setBudgetCap(val);
+                    setBudgetCapState(val);
+                  }
+                  setEditingBudget(false);
+                }}
+                className="w-20 text-xs font-mono text-emerald-500 bg-transparent border-b border-emerald-500/50 focus:outline-none text-right"
+                suppressHydrationWarning
+              />
+            ) : (
+              <button
+                className="text-xs font-mono text-emerald-500 hover:text-emerald-400 transition-colors"
+                title={`$${totalSpent.toFixed(5)} spent — click to edit budget`}
+                onClick={() => { setBudgetInput(budgetCap.toFixed(2)); setEditingBudget(true); }}
+                suppressHydrationWarning
+              >
+                ${(budgetCap - totalSpent).toFixed(2)} left
+              </button>
+            )}
 
             {state.messages.length > 0 && (
               <button

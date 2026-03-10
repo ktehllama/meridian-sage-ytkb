@@ -175,8 +175,22 @@ export async function initBudgetFromServer(): Promise<void> {
     const res = await fetch(`${API_URL}/api/budget`);
     if (!res.ok) return;
     const data = await res.json();
-    _budgetSpent = data.spent;
-    try { localStorage.setItem(BUDGET_KEY, data.spent.toFixed(6)); } catch {}
+    // Budget is monotonically increasing — take the higher value.
+    // If local has more spending history than server (e.g. server was reset),
+    // push local to server so it becomes the new source of truth.
+    let local = 0;
+    try { local = parseFloat(localStorage.getItem(BUDGET_KEY) ?? '0') || 0; } catch {}
+    if (local > data.spent) {
+      _budgetSpent = local;
+      fetch(`${API_URL}/api/budget`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spent: local }),
+      }).catch(() => {});
+    } else {
+      _budgetSpent = data.spent;
+      try { localStorage.setItem(BUDGET_KEY, data.spent.toFixed(6)); } catch {}
+    }
   } catch {}
 }
 

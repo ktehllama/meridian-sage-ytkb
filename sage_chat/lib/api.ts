@@ -67,6 +67,7 @@ export interface HealthResponse {
   status: string;
   chroma_chunks: number;
   db_videos: number;
+  model: string;
 }
 
 // ── API functions ──────────────────────────────────────────────────────────
@@ -238,6 +239,16 @@ export function newChatId(): string {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+export function formatModelName(modelId: string): string {
+  // "gemini-2.0-flash" → "Gemini 2.0 Flash"
+  // "gemini-2.5-flash-preview-05-20" → "Gemini 2.5 Flash"
+  return modelId
+    .replace(/-preview.*$/, '')          // strip -preview-... suffix
+    .split('-')
+    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(' ');
+}
 
 export function formatDuration(seconds: number | null): string {
   if (!seconds) return '';

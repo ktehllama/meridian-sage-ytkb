@@ -66,6 +66,7 @@ class HealthResponse(BaseModel):
     status: str          # "ok" | "degraded"
     chroma_chunks: int
     db_videos: int
+    model: str = ""
 
 
 class RandomFactResponse(BaseModel):

@@ -29,7 +29,7 @@ class GeminiProvider:
     Delegates to the module-level functions below so all logic lives in one place.
     """
 
-    def expand_query(self, query: str) -> list[str]:
+    def expand_query(self, query: str) -> tuple[list[str], dict | None]:
         return expand_query(query)
 
     def synthesize(
@@ -85,12 +85,12 @@ RULES:
 # Query expansion
 # ─────────────────────────────────────────────────────────────
 
-def expand_query(query: str) -> list[str]:
+def expand_query(query: str) -> tuple[list[str], dict | None]:
     """
     Correct typos and generate 3 paraphrased variants of the query using Gemini.
-    Returns a list: [original, corrected, paraphrase1, paraphrase2, paraphrase3].
+    Returns (variants, usage) where variants = [original, corrected?, paraphrase1, ...].
 
-    On Gemini failure, returns [query] only so the pipeline can still run.
+    On Gemini failure, returns ([query], None) so the pipeline can still run.
     """
     prompt = (
         "Output exactly 4 lines for the search query below:\n"
@@ -119,16 +119,23 @@ def expand_query(query: str) -> list[str]:
         if corrected.lower() != query.lower():
             logger.info(f"Query corrected: '{query}' → '{corrected}'")
 
-        # original + corrected (if different) + paraphrases
         variants: list[str] = [query]
         if corrected.lower() != query.lower():
             variants.append(corrected)
         variants.extend(lines[1:4])
-        return variants
+
+        usage = None
+        if hasattr(response, 'usage_metadata') and response.usage_metadata:
+            usage = {
+                "prompt_tokens": getattr(response.usage_metadata, 'prompt_token_count', 0) or 0,
+                "completion_tokens": getattr(response.usage_metadata, 'candidates_token_count', 0) or 0,
+            }
+
+        return variants, usage
 
     except Exception as e:
         logger.warning(f"Query expansion failed (using original only): {e}")
-        return [query]
+        return [query], None
 
 
 # ─────────────────────────────────────────────────────────────

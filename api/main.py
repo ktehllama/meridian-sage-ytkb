@@ -147,7 +147,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         )
 
     # Step 1: Expand query into paraphrase variants
-    query_variants = gemini_module.expand_query(request.query)
+    query_variants, expansion_usage = gemini_module.expand_query(request.query)
     logger.info(f"Query variants ({len(query_variants)}): {query_variants}")
 
     # Step 2: Search all variants, collect results
@@ -182,9 +182,11 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     usage_obj = None
     if raw_usage:
+        total_prompt = raw_usage["prompt_tokens"] + (expansion_usage["prompt_tokens"] if expansion_usage else 0)
+        total_completion = raw_usage["completion_tokens"] + (expansion_usage["completion_tokens"] if expansion_usage else 0)
         usage_obj = UsageInfo(
-            prompt_tokens=raw_usage["prompt_tokens"],
-            completion_tokens=raw_usage["completion_tokens"],
+            prompt_tokens=total_prompt,
+            completion_tokens=total_completion,
         )
 
     return ChatResponse(
@@ -233,14 +235,17 @@ async def random_fact() -> RandomFactResponse:
 async def health() -> HealthResponse:
     """Health check — reports ChromaDB and SQLite state."""
     collection = search_module.get_collection()
+    from api.config import config as api_config
     if collection is None:
         return HealthResponse(
             status="degraded",
             chroma_chunks=0,
             db_videos=search_module.get_db_video_count(),
+            model=api_config.GEMINI_MODEL,
         )
     return HealthResponse(
         status="ok",
         chroma_chunks=search_module.get_chunk_count(),
         db_videos=search_module.get_db_video_count(),
+        model=api_config.GEMINI_MODEL,
     )

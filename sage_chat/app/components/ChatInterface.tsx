@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducer, useCallback, useEffect, useRef, useState } from 'react';
-import { chat, Message, Source, ApiError, calcCost, getBudgetSpent, addBudgetSpent, getBudgetCap, setBudgetCap, loadChats, saveChat, deleteChat, renameChat, newChatId, StoredChat } from '../../lib/api';
+import { chat, getHealth, Message, Source, ApiError, calcCost, getBudgetSpent, addBudgetSpent, getBudgetCap, setBudgetCap, loadChats, saveChat, deleteChat, renameChat, newChatId, StoredChat, formatModelName } from '../../lib/api';
 import MessageList, { ChatMessage } from './MessageList';
 import { generateChatName } from '../../lib/chatName';
 import ChatInput from './ChatInput';
@@ -151,9 +151,11 @@ export default function ChatInterface() {
   const [budgetCap, setBudgetCapState] = useState(300);
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState('');
+  const [modelName, setModelName] = useState('');
   useEffect(() => {
     setTotalSpent(getBudgetSpent());
     setBudgetCapState(getBudgetCap());
+    getHealth().then(h => setModelName(formatModelName(h.model))).catch(() => {});
   }, []);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -327,7 +329,15 @@ export default function ChatInterface() {
       {/* Main area */}
       <div className="flex flex-col flex-1 min-w-0 h-full">
         {/* Top bar */}
-        <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)] flex-shrink-0 bg-[var(--bg-base)]">
+        <header className="relative flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)] flex-shrink-0 bg-[var(--bg-base)]">
+          {/* Center — model name */}
+          {modelName && (
+            <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
+              <span className="text-xs font-medium bg-gradient-to-r from-violet-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                {modelName}
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-3">
             <button
               onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}

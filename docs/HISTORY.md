@@ -1460,6 +1460,48 @@ The database question is solved: the Pi IS the single source of truth. `knowledg
 
 ---
 
+## Session 13 — 2026-03-10: Mobile Fixes + Budget Full Sync (v4.1)
+
+### Three bugs found on first real mobile use
+
+**1. Hero screen overflow on mobile**
+
+Root cause: `page.tsx` used `h-screen` = `100vh`. On Android Chrome and iOS Safari, `100vh` includes the browser address bar height. The app was taller than the actual visible viewport — body was scrollable.
+
+Fix: `h-[100dvh]` — dynamic viewport height, introduced in modern CSS. Tracks the actual visible area and adjusts when the browser chrome shows/hides. Well-supported on modern Android (Chrome 108+) and iOS (Safari 15.4+). The Samsung Galaxy A56 and similar modern Android phones support it fully.
+
+**2. Sidebar backdrop DOM — the stopPropagation trap**
+
+First attempted fix: `e.stopPropagation()` on the New Chat button. Didn't work because the backdrop `div` was a **sibling** of the `aside`, not an ancestor. `stopPropagation` only prevents bubbling up the ancestor chain — it has no effect on siblings.
+
+Second attempt: `stopPropagation` on the `aside` element itself. Still unreliable on mobile because non-interactive elements (like `aside`) don't guarantee reliable click capture on iOS/Android.
+
+Real fix: restructured the DOM. The outer `div` is now both the backdrop and the click handler. `aside` is its child. The `onClick` checks `e.target === e.currentTarget` — only fires `onClose` when the tap lands directly on the outer backdrop area, not when events bubble from inside the panel. No `stopPropagation` needed anywhere.
+
+**3. Budget cap not synced across devices**
+
+The budget display is `budgetCap - totalSpent`. `totalSpent` was being synced from server (`initBudgetFromServer` set `_budgetSpent` from `data.spent`). But `budgetCap` was only in localStorage, and each device had a different value from previous edits. Result: even when `spent` matched, the displayed remaining amount diverged.
+
+Fix:
+- `initBudgetFromServer()` now also writes `data.cap` to localStorage, overriding the stale local cap
+- `setBudgetCap()` (called when user edits the budget) now fire-and-forgets `PUT /api/budget` with `{ cap }` so the new cap is persisted to server immediately
+
+After pull + restart, both PC and phone showed identical `$299.99541`. Made a test query — both went down to `$299.99522` simultaneously. Fully synced.
+
+### New Chat button UX fix
+
+User realized "New Chat" was working all along — it returns to the home screen, which looks like nothing happened. The button was just confusing when already on the home screen.
+
+Fixes:
+- New Chat button in Sidebar now hidden when `hasMessages = false` (already on home screen)
+- Redundant "New Chat" text button removed from the top navbar
+
+14. **Budget sync**: `spent` and `cap` both server-side in `chats.db` settings table. `initBudgetFromServer()` overwrites localStorage for both on every load. `addBudgetSpent()` and `setBudgetCap()` both fire-and-forget PUT to server. Seed with: `sqlite3 chats.db "INSERT OR REPLACE INTO settings VALUES ('budget_spent', 'X'); INSERT OR REPLACE INTO settings VALUES ('budget_cap', '300.00000');"`.
+
+15. **Mobile viewport**: `h-[100dvh]` not `h-screen`. Never use `100vh` in mobile-first apps — it includes browser chrome on Android/iOS.
+
+---
+
 ## Session 13 — 2026-03-10: Mobile Fixes + Cross-Device Budget (v4.1)
 
 ### The three bugs

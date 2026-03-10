@@ -2,6 +2,19 @@
 
 ---
 
+## 2026-03-10 — Mobile + Budget Polish (v4.1 follow-up)
+
+### Fixed
+- **Mobile viewport height** (`page.tsx`) — `h-screen` (`100vh`) includes the browser address bar on Android/iOS, making the app taller than the visible area and causing scroll. Changed to `h-[100dvh]` (dynamic viewport height) which tracks the actual visible area.
+- **Sidebar backdrop DOM** (`Sidebar.tsx`) — restructured to proper modal pattern: single outer `div` is both the backdrop and click handler, `aside` is a child. `onClick` uses `e.target === e.currentTarget` so only direct taps on the backdrop close the sidebar, not bubbled events from inside the panel. Removes reliance on `stopPropagation` which is unreliable on mobile.
+- **Budget cap not synced** (`lib/api.ts`) — `initBudgetFromServer()` now also writes `cap` from the server response to localStorage, overriding any stale local cap. `setBudgetCap()` now fire-and-forgets `PUT /api/budget` with the new cap so all devices stay in sync.
+- **New Chat shown on home screen** (`Sidebar.tsx`, `ChatInterface.tsx`) — "New Chat" button in sidebar now only renders when `hasMessages=true` (inside an active chat). Removed redundant "New Chat" button from the top navbar.
+
+### Result
+Budget now fully synced: both `spent` and `cap` come from server on init and are written back on every change. Any device opening the app sees the same remaining budget.
+
+---
+
 ## 2026-03-10 — Mobile Hero + New Chat Fix + Server-Side Budget (v4.1)
 
 ### Fixed

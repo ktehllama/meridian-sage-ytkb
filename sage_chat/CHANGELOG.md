@@ -2,6 +2,13 @@
 
 ---
 
+## 2026-03-10 — @-mention dropdown z-index fix
+
+### Fixed
+- **@-mention dropdown behind hero content** (`ChatInput.tsx`) — dropdown was rendering below the hero title, description, and suggestion chips. Added `z-50` to the dropdown wrapper so it appears above all hero elements.
+
+---
+
 ## 2026-03-10 — Mobile + Budget Polish (v4.1 follow-up)
 
 ### Fixed

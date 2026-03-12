@@ -165,14 +165,14 @@ class Meridian:
             model=self._gemini_model,
         )
 
-        # Strip [SRC_N] markers from displayed answer
-        clean_answer = re.sub(r'\s*\[SRC_\d+\]', '', raw_answer).strip()
+        # Strip [SRC_N] and [SRC_N, SRC_M, ...] markers from displayed answer
+        clean_answer = re.sub(r'\s*\[SRC_\d+(?:,\s*SRC_\d+)*\]', '', raw_answer).strip()
 
         if not show_sources:
             return clean_answer
 
         # Build sources dict — only chunks that were actually cited
-        cited_nums = set(re.findall(r'\[SRC_(\d+)\]', raw_answer))
+        cited_nums = set(re.findall(r'SRC_(\d+)', raw_answer))
         sources = {
             f"SRC_{i+1}": {"title": c["title"], "url": c["timestamp_url"]}
             for i, c in enumerate(top_chunks)

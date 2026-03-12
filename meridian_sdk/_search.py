@@ -180,7 +180,7 @@ def hybrid_search(query: str, n_results: int = 8) -> list[dict]:
             top_idx = sorted(range(len(raw)), key=lambda i: raw[i], reverse=True)[:n_candidates]
 
             bm25_only = [(i, ids_snap[i]) for i in top_idx if ids_snap[i] not in candidates]
-            for i, cid in top_idx:
+            for i in top_idx:
                 if ids_snap[i] in candidates:
                     candidates[ids_snap[i]]["bm25_score"] = float(raw[i])
 

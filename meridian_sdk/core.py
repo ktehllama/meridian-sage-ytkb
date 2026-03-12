@@ -16,10 +16,19 @@ Usage:
 
     # chat: LLM answer, natural conversational tone (default)
     answer = m.search("what makes a good co-founder", mode="chat")
+
+    # with sources dict
+    result = m.search("hiring", mode="chat", show_sources=True)
+    print(result["answer"])
+    print(result["sources"])  # {"SRC_1": {"title": ..., "url": ...}, ...}
+
+    # verbose: prints typo corrections, query variants, and loading steps
+    answer = m.search("how do you find PMF", verbose=True)
 """
 
 import logging
 import os
+import re
 from typing import Literal
 
 from meridian_sdk._search import init as _init_search
@@ -74,51 +83,100 @@ class Meridian:
             wait_for_bm25=wait_for_bm25,
         )
 
-    def search(self, query: str, mode: Mode = "chat") -> str | list[dict]:
+    def search(
+        self,
+        query: str,
+        mode: Mode = "chat",
+        verbose: bool = False,
+        show_sources: bool = False,
+    ) -> str | list[dict] | dict:
         """
         Search the knowledge base.
 
         Args:
-            query: Natural language question or topic.
+            query:        Natural language question or topic.
             mode:
                 "raw"     — returns list[dict] of chunks directly from the search engine.
                             No LLM. Each dict: {chunk_id, title, text, timestamp_str,
                             timestamp_url, start_time, score}
                 "serious" — LLM-synthesized answer, terse and direct. No filler.
                 "chat"    — LLM-synthesized answer, natural conversational tone.
+            verbose:      Print typo corrections, query variants, and progress steps.
+            show_sources: If True, returns dict {"answer": str, "sources": {SRC_N: {title, url}}}
+                          instead of a plain string. Sources only include chunks actually cited.
+                          Default False — plain answer string with no [SRC_N] markers.
 
         Returns:
-            str (serious/chat) or list[dict] (raw).
+            list[dict]  if mode="raw"
+            str         if mode="serious"/"chat" and show_sources=False
+            dict        if mode="serious"/"chat" and show_sources=True
         """
         if mode == "raw":
+            if verbose:
+                print(f"[raw] searching: '{query}'")
             return hybrid_search(query, n_results=self._n_results)
 
-        # Expand query into variants for better recall
-        variants = expand_query(
+        # ── Query expansion ───────────────────────────────────
+        if verbose:
+            print(f"[1/3] Expanding query: '{query}' ...")
+
+        variants, typo_fix = expand_query(
             query,
             project=self._gcp_project,
             location=self._gcp_location,
             model=self._gemini_model,
         )
 
-        # Search with each variant, merge and deduplicate
+        if verbose:
+            if typo_fix:
+                print(f"      Typo corrected: '{query}' → '{typo_fix}'")
+            print(f"      Variants ({len(variants)}):")
+            for v in variants:
+                print(f"        • {v}")
+
+        # ── Multi-query search ────────────────────────────────
+        if verbose:
+            print(f"[2/3] Searching {len(variants)} variant(s) ...")
+
         seen: set[str] = set()
         all_chunks: list[dict] = []
-        for variant in variants:
+        for i, variant in enumerate(variants):
+            if verbose:
+                print(f"      [{i+1}/{len(variants)}] '{variant}'")
             for chunk in hybrid_search(variant, n_results=self._n_results):
                 if chunk["chunk_id"] not in seen:
                     seen.add(chunk["chunk_id"])
                     all_chunks.append(chunk)
 
-        # Re-sort merged pool by score, keep top n
         all_chunks.sort(key=lambda c: c["score"], reverse=True)
         top_chunks = all_chunks[:self._n_results]
 
-        return synthesize(
+        if verbose:
+            print(f"      {len(top_chunks)} unique chunks after dedup")
+            print(f"[3/3] Synthesizing ({mode} mode) ...")
+
+        # ── LLM synthesis ─────────────────────────────────────
+        raw_answer = synthesize(
             query=query,
             chunks=top_chunks,
-            style=mode,  # "serious" or "chat"
+            style=mode,
             project=self._gcp_project,
             location=self._gcp_location,
             model=self._gemini_model,
         )
+
+        # Strip [SRC_N] markers from displayed answer
+        clean_answer = re.sub(r'\s*\[SRC_\d+\]', '', raw_answer).strip()
+
+        if not show_sources:
+            return clean_answer
+
+        # Build sources dict — only chunks that were actually cited
+        cited_nums = set(re.findall(r'\[SRC_(\d+)\]', raw_answer))
+        sources = {
+            f"SRC_{i+1}": {"title": c["title"], "url": c["timestamp_url"]}
+            for i, c in enumerate(top_chunks)
+            if str(i + 1) in cited_nums
+        }
+
+        return {"answer": clean_answer, "sources": sources}

@@ -64,11 +64,13 @@ def expand_query(
     project: str,
     location: str,
     model: str,
-) -> list[str]:
+) -> tuple[list[str], str | None]:
     """
     Correct typos and generate 3 paraphrased variants.
-    Returns [original, corrected?, paraphrase1, paraphrase2, paraphrase3].
-    On failure returns [query].
+    Returns (variants, corrected) where:
+      - variants = [original, corrected?, paraphrase1, paraphrase2, paraphrase3]
+      - corrected = typo-corrected form if different from original, else None
+    On failure returns ([query], None).
     """
     prompt = (
         "Output exactly 4 lines for the search query below:\n"
@@ -89,14 +91,15 @@ def expand_query(
         )
         lines = [l.strip() for l in response.text.strip().split("\n") if l.strip()]
         corrected = lines[0] if lines else query
+        typo_fix = corrected if corrected.lower() != query.lower() else None
         variants = [query]
-        if corrected.lower() != query.lower():
+        if typo_fix:
             variants.append(corrected)
         variants.extend(lines[1:4])
-        return variants
+        return variants, typo_fix
     except Exception as e:
         logger.warning(f"Query expansion failed: {e}")
-        return [query]
+        return [query], None
 
 
 # ─────────────────────────────────────────────────────────────

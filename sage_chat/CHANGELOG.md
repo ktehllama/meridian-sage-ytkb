@@ -2,6 +2,40 @@
 
 ---
 
+## 2026-03-12 — Meridian SDK
+
+### Added
+- **`meridian_sdk/`** — standalone Python package that exposes Meridian's full query pipeline without the web app or API server.
+  - `Meridian` class with a single `.search(query, mode)` entry point
+  - **`mode="raw"`** — returns raw `list[dict]` chunks from hybrid search, no LLM
+  - **`mode="serious"`** — LLM-synthesized answer, terse and direct (no filler)
+  - **`mode="chat"`** — LLM-synthesized answer, natural conversational tone (default)
+  - Full pipeline: typo correction → multi-query expansion → hybrid search (semantic + BM25) → LLM synthesis
+  - Reads the same `yc_vectors/`, `knowledge.db`, and `bm25_cache.pkl` as the webapp — no copying or syncing
+  - Zero imports from `api/` — completely standalone
+
+### Usage
+```python
+from meridian_sdk import Meridian
+
+m = Meridian()  # reads env vars or defaults to ./yc_vectors, ./knowledge.db
+
+results = m.search("fundraising cold emails", mode="raw")     # list of chunks
+answer  = m.search("how to find product market fit", mode="serious")  # terse answer
+answer  = m.search("what makes a good co-founder", mode="chat")       # conversational
+```
+
+Constructor accepts explicit paths if running from a different directory:
+```python
+m = Meridian(
+    chroma_path="/path/to/yc_vectors",
+    sqlite_path="/path/to/knowledge.db",
+    gcp_project="your-gcp-project",
+)
+```
+
+---
+
 ## 2026-03-10 — @-mention dropdown z-index fix
 
 ### Fixed

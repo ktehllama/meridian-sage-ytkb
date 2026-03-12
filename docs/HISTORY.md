@@ -1,5 +1,5 @@
 # Meridian YTKB — Complete Development History
-*Every session, every decision, every bug, every fix — from first commit to v4.0 stable.*
+*Every session, every decision, every bug, every fix — from first commit to v4.1 stable.*
 *Written to give a new Claude session complete context. Read top to bottom.*
 
 ---
@@ -1549,5 +1549,59 @@ Backend:
 Frontend:
 - `lib/api.ts`: `_budgetSpent: number | null` in-memory cache (avoids localStorage re-read on every render). `initBudgetFromServer()` fetches server value and populates cache. `addBudgetSpent()` updates cache + localStorage immediately, fire-and-forgets `PUT /api/budget` in background. `getBudgetSpent()` checks cache first before falling back to localStorage.
 - `ChatInterface.tsx`: `initBudgetFromServer()` called in mount `useEffect` alongside `initChatsFromServer()`. On resolve, updates the `totalSpent` and `budgetCap` UI state to reflect server values.
+
+---
+
+## Session 14 — 2026-03-12: Meridian SDK
+
+### What was built
+
+**`meridian_sdk/`** — a standalone Python package that exposes Meridian's complete query pipeline without the web app or API server. The goal: query the knowledge base from any Python script, notebook, or agent with a single import and one method call.
+
+The SDK is completely independent from `api/` — no shared imports. It reads the same database files (`yc_vectors/`, `knowledge.db`, `bm25_cache.pkl`) that the webapp uses, so no copying or syncing is needed when running from the project root.
+
+### Architecture
+
+Three files inside `meridian_sdk/`:
+
+- **`_search.py`** — standalone hybrid search engine (ChromaDB semantic + BM25 keyword). Mirrors the logic in `api/search.py` but with no FastAPI or config dependencies. `init()` connects ChromaDB and starts BM25 index build in a background thread. `hybrid_search(query, n_results)` returns ranked chunks.
+
+- **`_llm.py`** — standalone Gemini client. Contains both system prompts (`_CHAT_PROMPT` and `_SERIOUS_PROMPT`), `expand_query()` for typo correction + paraphrase generation, and `synthesize()` which accepts a `style` param to switch between prompts.
+
+- **`core.py`** — the `Meridian` class. Wires everything together. Lazy-inits on instantiation. Single public method: `.search(query, mode)`.
+
+### Three modes
+
+| Mode | Pipeline | Returns |
+|------|----------|---------|
+| `raw` | hybrid search only, no LLM | `list[dict]` of chunks with metadata |
+| `serious` | full pipeline + terse system prompt | `str` — direct answer, no filler |
+| `chat` | full pipeline + conversational prompt | `str` — natural language answer |
+
+Full pipeline (serious/chat): typo correction → 3 paraphrase variants → hybrid search per variant → merge + deduplicate → re-sort by score → LLM synthesis.
+
+### Usage
+
+```python
+from meridian_sdk import Meridian
+
+m = Meridian()  # reads env vars or defaults to ./yc_vectors, ./knowledge.db
+
+# raw — list of chunk dicts, no LLM
+results = m.search("fundraising cold emails", mode="raw")
+
+# serious — terse LLM answer
+answer = m.search("how to find product market fit", mode="serious")
+
+# chat — conversational LLM answer (default)
+answer = m.search("what makes a good co-founder")
+```
+
+Constructor accepts explicit overrides for all paths and Gemini config if running from a different directory.
+
+### Critical facts
+
+16. **`meridian_sdk/` is zero-dependency on `api/`** — it duplicates the search and LLM logic inline. This is intentional. The SDK must work standalone without the webapp installed. Do not refactor them to share code.
+17. **Serious vs chat mode** — the only difference is the system prompt passed to Gemini. `_SERIOUS_PROMPT` strips all conversational language and caps output at 1-3 paragraphs. `_CHAT_PROMPT` is identical to Sage's normal persona.
 
 The existing `$299.99577` value on the Pi persists in memory/localStorage — first time the Pi API restarts with the new `settings` table, the budget starts at `0` until the PC does a query (which fires `PUT /api/budget` with the real value). If needed, can seed manually: `INSERT INTO settings VALUES ('budget_spent', '0.00423')` in the Pi's `chats.db`.

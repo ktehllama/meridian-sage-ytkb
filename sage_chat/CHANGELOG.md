@@ -2,6 +2,21 @@
 
 ---
 
+## 2026-03-12 — Meridian SDK v1.1 (bug fixes + polish)
+
+### Fixed
+- **BM25 unpack error** (`_search.py`) — `for i, cid in top_idx` was trying to unpack integers as tuples. Fixed to `for i in top_idx`.
+- **Multi-source citation stripping** (`core.py`) — regex only matched single `[SRC_N]` tags. Updated to also strip `[SRC_4, SRC_8]` and `[SRC_1, SRC_2, SRC_3]` style citations. Source extractor simplified to `SRC_(\d+)` to catch all formats.
+- **Serious mode prompt** (`_llm.py`) — was still producing framing sentences like "There are varying definitions of...". Rewrote prompt to explicitly ban setup sentences and require starting with the actual answer.
+
+### Added
+- **`verbose=True`** on `.search()` — prints typo correction, all query variants with `[1/3]`/`[2/3]`/`[3/3]` progress steps.
+- **`show_sources=True`** on `.search()` — returns `{"answer": str, "sources": {"SRC_1": {"title": ..., "url": ...}}}` with only actually-cited chunks included.
+- **Default citation stripping** — `[SRC_N]` markers are always stripped from the displayed answer. Clean output by default.
+- **`expand_query()`** now returns `(variants, corrected)` tuple so verbose mode can show typo corrections.
+
+---
+
 ## 2026-03-12 — Meridian SDK
 
 ### Added

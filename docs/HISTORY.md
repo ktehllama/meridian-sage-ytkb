@@ -1603,5 +1603,9 @@ Constructor accepts explicit overrides for all paths and Gemini config if runnin
 
 16. **`meridian_sdk/` is zero-dependency on `api/`** — it duplicates the search and LLM logic inline. This is intentional. The SDK must work standalone without the webapp installed. Do not refactor them to share code.
 17. **Serious vs chat mode** — the only difference is the system prompt passed to Gemini. `_SERIOUS_PROMPT` strips all conversational language and caps output at 1-3 paragraphs. `_CHAT_PROMPT` is identical to Sage's normal persona.
+18. **Citation stripping** — `[SRC_N]` markers are always removed from the returned answer string. `show_sources=True` returns a dict with the cited chunks. Multi-source citations like `[SRC_4, SRC_8]` are handled by matching `SRC_(\d+)` globally rather than full bracket patterns.
+19. **BM25 unpack bug (fixed)** — original `_search.py` had `for i, cid in top_idx` where `top_idx` is `list[int]`. Should be `for i in top_idx`. Caused a crash on every BM25 scoring pass, silently falling back to semantic-only.
+
+### Session 14 follow-up — SDK v1.1 polish
 
 The existing `$299.99577` value on the Pi persists in memory/localStorage — first time the Pi API restarts with the new `settings` table, the budget starts at `0` until the PC does a query (which fires `PUT /api/budget` with the real value). If needed, can seed manually: `INSERT INTO settings VALUES ('budget_spent', '0.00423')` in the Pi's `chats.db`.

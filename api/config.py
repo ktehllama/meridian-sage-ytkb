@@ -1,9 +1,4 @@
-"""
-api/config.py
-=============
-Centralised configuration — all env var reads happen here.
-Other modules import `config` and read attributes off it.
-"""
+# All env var reads happen here. Other modules import `config` and read attributes off it.
 
 import os
 from dataclasses import dataclass
@@ -27,7 +22,7 @@ def _load() -> Config:
         CHROMA_DB_PATH=os.environ.get("CHROMA_DB_PATH", "./yc_vectors"),
         CHROMA_COLLECTION=os.environ.get("CHROMA_COLLECTION", "transcripts"),
         SQLITE_DB_PATH=os.environ.get("SQLITE_DB_PATH", "./knowledge.db"),
-        GCP_PROJECT=os.environ.get("GCP_PROJECT", "YOUR_GCP_PROJECT_NUMBER"),
+        GCP_PROJECT=os.environ.get("GCP_PROJECT", ""),
         GCP_LOCATION=os.environ.get("GCP_LOCATION", "us-central1"),
         GEMINI_MODEL=os.environ.get("GEMINI_MODEL", "gemini-2.0-flash"),
         BM25_CACHE_PATH=os.environ.get("BM25_CACHE_PATH", "./bm25_cache.pkl"),

@@ -25,10 +25,21 @@ Thumbs.db
 *.log
 LATESTCLAUDECHAT.md
 
-# Claude Code local dev files
-.claude/settings.local.json
-.claude/logs/
-.claude/plans/
+# Claude Code workspace (internal, not for public repo)
+.claude/
+sage_chat/.claude/
+CLAUDE.md
+.claudeignore
+CHANGELOG.md
+sage_chat/CHANGELOG.md
+
+# Internal planning docs
+docs/HISTORY.md
+docs/ROADMAP.md
+docs/TODO.md
+
+# Legacy code (superseded by pipeline.py)
+archive/
 
 # Build artifacts
 **/__pycache__/

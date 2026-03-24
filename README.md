@@ -20,13 +20,13 @@ knowledge.db   yc_vectors/          SQLite + ChromaDB (generated, not in repo)
            sage_chat/ (Next.js)     chat UI
 ```
 
-**`pipeline.py`** — two-layer ingestion. Layer 1 scrapes YouTube channels into SQLite (`knowledge.db`). Layer 2 chunks transcripts and embeds them into ChromaDB (`yc_vectors/`). Both layers are incremental — already-processed videos are skipped.
+**`pipeline.py`** — two-layer ingestion. Layer 1 scrapes YouTube channels into SQLite (`knowledge.db`). Layer 2 chunks transcripts and embeds them into ChromaDB (`yc_vectors/`). Incremental — already-processed videos are skipped.
 
-**`api/`** — FastAPI server on port 8000. On startup, connects to ChromaDB and builds a BM25 index in a background thread (cached to `bm25_cache.pkl`). Every `/api/chat` request runs query expansion → hybrid search → optional web fallback → Gemini synthesis.
+**`api/`** — FastAPI on port 8000. On startup, connects to ChromaDB and builds a BM25 index in a background thread (cached to `bm25_cache.pkl`). Every `/api/chat` request runs query expansion → hybrid search → optional web fallback → Gemini synthesis.
 
-**`sage_chat/`** — Next.js 14 frontend on port 3000. Calls the API, renders markdown with citation superscripts, persists chat history to the API.
+**`sage_chat/`** — Next.js 14 on port 3000. Renders markdown with citation superscripts, persists chat history to the API.
 
-**`meridian_sdk/`** — standalone Python client. Runs the full hybrid search + synthesis pipeline directly against the local DBs, no API server needed.
+**`meridian_sdk/`** — standalone Python client, no API server needed. Runs hybrid search + synthesis directly against the local DBs.
 
 ---
 
@@ -50,7 +50,7 @@ knowledge.db   yc_vectors/          SQLite + ChromaDB (generated, not in repo)
 
 ## Generated Files (not in repo)
 
-These are created at runtime. Point `api/.env` and `start.sh` at their paths.
+Created at runtime — not in the repo. Point `api/.env` and `start.sh` at their paths.
 
 | File | Created by | Contents |
 |------|-----------|----------|
@@ -76,18 +76,18 @@ Every `/api/chat` request:
 
 ## Chunking
 
-- **Size**: 150 words, 50-word sliding overlap, segment boundaries respected
-- **Chunk ID**: `{video_id}_chunk_{idx:04d}` (e.g. `dQw4w9WgXcQ_chunk_0003`)
-- **Document format**: `"{title}\n\n{chunk_text}"` — title prepended before embedding
-- **Collections**:
-  - `transcripts` — one document per chunk
-  - `video_metadata` — one document per video (`title + description`), for title-level matching
+- 150 words, 50-word sliding overlap, segment boundaries respected
+- Chunk ID: `{video_id}_chunk_{idx:04d}` (e.g. `dQw4w9WgXcQ_chunk_0003`)
+- Stored as `"{title}\n\n{chunk_text}"` — title prepended before embedding
+- Two collections:
+  - `transcripts` — one doc per chunk
+  - `video_metadata` — one doc per video (`title + description`), for title-level matching
 
 ---
 
 ## Installation
 
-### 1. Clone and install Python deps
+**Clone and install:**
 
 ```bash
 git clone https://github.com/ktehllama/meridian-sage-ytkb.git
@@ -95,30 +95,26 @@ cd meridian-sage-ytkb
 pip install -r requirements.txt
 ```
 
-### 2. Authenticate with GCP
-
-Required for Gemini. Uses Application Default Credentials — no API key file.
+**Authenticate with GCP** (no API key file — uses ADC):
 
 ```bash
 gcloud auth application-default login
 ```
 
-### 3. Scrape and index a channel
+**Scrape a channel** (creates `knowledge.db` and `yc_vectors/`):
 
 ```bash
 python pipeline.py add-channel @ycombinator
 ```
 
-This creates `knowledge.db` and `yc_vectors/` on first run.
-
-### 4. Configure the API
+**Configure the API:**
 
 ```bash
 cp api/.env.example api/.env
-# edit api/.env — set GCP_PROJECT and verify paths
+# set GCP_PROJECT, verify paths
 ```
 
-### 5. Start
+**Start:**
 
 ```bash
 # both API and frontend together:
@@ -270,7 +266,7 @@ CREATE TABLE channel_queue (
 
 ## Meridian SDK
 
-Runs the full pipeline locally without the API server:
+No API server needed — hits the local DBs directly.
 
 ```python
 from meridian_sdk import Meridian
@@ -279,6 +275,4 @@ m = Meridian(gcp_project="your-project-number")
 print(m.search("how to talk to users", mode="chat"))
 ```
 
-Modes: `"chat"` (conversational), `"serious"` (dense/terse), `"raw"` (returns chunk dicts, no LLM).
-
-See `meridian_sdk/example.py` for full usage.
+Modes: `"chat"`, `"serious"` (terse), `"raw"` (chunk dicts, no LLM). See `meridian_sdk/example.py`.

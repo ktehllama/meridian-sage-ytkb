@@ -20,13 +20,13 @@ knowledge.db   yc_vectors/          SQLite + ChromaDB (generated, not in repo)
            sage_chat/ (Next.js)     chat UI
 ```
 
-**`pipeline.py`** — two-layer ingestion. Layer 1 scrapes YouTube channels into SQLite (`knowledge.db`). Layer 2 chunks transcripts and embeds them into ChromaDB (`yc_vectors/`). Incremental — already-processed videos are skipped.
+**`pipeline.py`**: two-layer ingestion. Layer 1 scrapes YouTube channels into SQLite (`knowledge.db`). Layer 2 chunks transcripts and embeds them into ChromaDB (`yc_vectors/`). Incremental; already-processed videos are skipped.
 
-**`api/`** — FastAPI on port 8000. On startup, connects to ChromaDB and builds a BM25 index in a background thread (cached to `bm25_cache.pkl`). Every `/api/chat` request runs query expansion → hybrid search → optional web fallback → Gemini synthesis.
+**`api/`**: FastAPI on port 8000. Connects to ChromaDB on startup and builds a BM25 index in a background thread (cached to `bm25_cache.pkl`). Every `/api/chat` request runs query expansion -> hybrid search -> optional web fallback -> Gemini synthesis.
 
-**`sage_chat/`** — Next.js 14 on port 3000. Renders markdown with citation superscripts, persists chat history to the API.
+**`sage_chat/`**: Next.js 14 on port 3000. Renders markdown with citation superscripts, persists chat history to the API.
 
-**`meridian_sdk/`** — standalone Python client, no API server needed. Runs hybrid search + synthesis directly against the local DBs.
+**`meridian_sdk/`**: standalone Python client, no API server needed. Runs hybrid search + synthesis directly against the local DBs.
 
 ---
 
@@ -38,23 +38,23 @@ knowledge.db   yc_vectors/          SQLite + ChromaDB (generated, not in repo)
 | Vector store | `chromadb` (embedded, no server) | 1.5.2 |
 | Keyword search | `rank_bm25` (BM25Okapi) | 0.2.2 |
 | LLM | Vertex AI Gemini via `google-genai` | 1.66.0 |
-| Gemini model | `gemini-2.0-flash` | — |
+| Gemini model | `gemini-2.0-flash` | - |
 | YouTube scraping | `yt-dlp` | 2026.2.21 |
 | Transcript fetch | `youtube-transcript-api` | 1.2.4 |
 | API framework | `fastapi` + `uvicorn` | 0.135.1 / 0.41.0 |
 | Frontend | Next.js + React + Tailwind | 14.2.3 / 18 / 3 |
-| Web search fallback | `duckduckgo-search` | — |
+| Web search fallback | `duckduckgo-search` | - |
 | Auth | Google Application Default Credentials | no key file |
 
 ---
 
 ## Generated Files (not in repo)
 
-Created at runtime — not in the repo. Point `api/.env` and `start.sh` at their paths.
+Created at runtime. Point `api/.env` and `start.sh` at their paths.
 
 | File | Created by | Contents |
 |------|-----------|----------|
-| `knowledge.db` | `pipeline.py` | SQLite — channels, videos, transcripts, queue |
+| `knowledge.db` | `pipeline.py` | SQLite: channels, videos, transcripts, queue |
 | `yc_vectors/` | `pipeline.py` | ChromaDB persistent store (two collections) |
 | `bm25_cache.pkl` | `api/search.py` | Serialized BM25Okapi index + chunk IDs |
 | `chats.db` | `api/chat_db.py` | Saved chat history |
@@ -65,12 +65,12 @@ Created at runtime — not in the repo. Point `api/.env` and `start.sh` at their
 
 Every `/api/chat` request:
 
-1. **Query expansion** — Gemini generates 3 paraphrased variants of the query (`temperature=0.4`, `max_tokens=200`)
-2. **Hybrid search** — for each variant, ChromaDB returns top candidates (cosine similarity) and BM25Okapi scores the same candidates on keyword overlap
-3. **Score merge** — `score = 0.7 × semantic + 0.3 × BM25_normalized`; results across all variants are deduplicated by `chunk_id`, keeping the highest score
-4. **Web fallback** — if the top result scores below `0.30`, DuckDuckGo search runs and results are injected with a fixed score of `0.25`
-5. **Synthesis** — top 8 chunks passed to Gemini with `[SRC_N]` citation markers; model required to cite every factual claim
-6. **Response** — answer string + structured source list (`src_id`, `title`, `timestamp_str`, `url`, `quote`)
+1. **Query expansion**: Gemini generates 3 paraphrased variants of the query (`temperature=0.4`, `max_tokens=200`)
+2. **Hybrid search**: for each variant, ChromaDB returns top candidates (cosine similarity) and BM25Okapi scores the same candidates on keyword overlap
+3. **Score merge**: `score = 0.7 * semantic + 0.3 * BM25_normalized`; results across all variants are deduplicated by `chunk_id`, keeping the highest score
+4. **Web fallback**: if the top result scores below `0.30`, DuckDuckGo search runs and results are injected with a fixed score of `0.25`
+5. **Synthesis**: top 8 chunks passed to Gemini with `[SRC_N]` citation markers; model required to cite every factual claim
+6. **Response**: answer string + structured source list (`src_id`, `title`, `timestamp_str`, `url`, `quote`)
 
 ---
 
@@ -78,10 +78,10 @@ Every `/api/chat` request:
 
 - 150 words, 50-word sliding overlap, segment boundaries respected
 - Chunk ID: `{video_id}_chunk_{idx:04d}` (e.g. `dQw4w9WgXcQ_chunk_0003`)
-- Stored as `"{title}\n\n{chunk_text}"` — title prepended before embedding
+- Stored as `"{title}\n\n{chunk_text}"` (title prepended before embedding)
 - Two collections:
-  - `transcripts` — one doc per chunk
-  - `video_metadata` — one doc per video (`title + description`), for title-level matching
+  - `transcripts`: one doc per chunk
+  - `video_metadata`: one doc per video (`title + description`), for title-level matching
 
 ---
 
@@ -95,7 +95,7 @@ cd meridian-sage-ytkb
 pip install -r requirements.txt
 ```
 
-**Authenticate with GCP** (no API key file — uses ADC):
+**Authenticate with GCP** (uses ADC, no API key file):
 
 ```bash
 gcloud auth application-default login
@@ -117,7 +117,7 @@ cp api/.env.example api/.env
 **Start:**
 
 ```bash
-# both API and frontend together:
+# both API and frontend:
 ./start.sh          # production
 ./start.sh --dev    # development
 
@@ -126,7 +126,7 @@ uvicorn api.main:app --port 8000
 cd sage_chat && npm install && npm run dev
 ```
 
-Frontend: `http://localhost:3000` — API: `http://localhost:8000`
+Frontend: `http://localhost:3000` / API: `http://localhost:8000`
 
 ---
 
@@ -148,7 +148,7 @@ python pipeline.py [--db PATH] [--vectors PATH] <command> [flags]
 | `sync` | Embed any SQLite videos missing from ChromaDB |
 | `status` | Print stats for both SQLite and ChromaDB |
 | `rebuild` | Wipe ChromaDB and re-embed everything from SQLite |
-| `rechunk` | Same as rebuild — use after changing chunk size |
+| `rechunk` | Same as rebuild, use after changing chunk size |
 | `search "query"` | Raw semantic search (no BM25, no synthesis) |
 
 ### `add-channel` flags
@@ -177,17 +177,17 @@ python pipeline.py [--db PATH] [--vectors PATH] <command> [flags]
 |--------|------|-------------|----------|
 | `POST` | `/api/chat` | `{query, mode, history}` | `{answer, sources, mode, usage}` |
 | `GET` | `/api/videos` | `?channel=&limit=&offset=` | `{videos, total}` |
-| `GET` | `/api/channels` | — | `{channels: [{name, video_count}]}` |
-| `GET` | `/api/random-fact` | — | `{title, channel, excerpt, timestamp_str, url}` |
-| `GET` | `/api/health` | — | `{status, chroma_chunks, db_videos, model}` |
-| `GET` | `/api/chats` | — | list of stored chats |
+| `GET` | `/api/channels` | - | `{channels: [{name, video_count}]}` |
+| `GET` | `/api/random-fact` | - | `{title, channel, excerpt, timestamp_str, url}` |
+| `GET` | `/api/health` | - | `{status, chroma_chunks, db_videos, model}` |
+| `GET` | `/api/chats` | - | list of stored chats |
 | `POST` | `/api/chats` | `{id, name, mode, messages, saved_at}` | 204 |
-| `DELETE` | `/api/chats/{id}` | — | 204 |
+| `DELETE` | `/api/chats/{id}` | - | 204 |
 | `PATCH` | `/api/chats/{id}` | `{name}` | 204 |
-| `GET` | `/api/budget` | — | `{spent, cap}` |
+| `GET` | `/api/budget` | - | `{spent, cap}` |
 | `PUT` | `/api/budget` | `{spent?, cap?}` | 204 |
 
-**`mode`** in `/api/chat`: `"ephemeral"` (stateless) or `"conversation"` (uses `history` array).
+`mode` in `/api/chat`: `"ephemeral"` (stateless) or `"conversation"` (uses `history` array).
 
 ---
 
@@ -195,7 +195,7 @@ python pipeline.py [--db PATH] [--vectors PATH] <command> [flags]
 
 | Variable | Default | Required | Description |
 |----------|---------|----------|-------------|
-| `GCP_PROJECT` | — | yes | GCP project number (digits) |
+| `GCP_PROJECT` | - | yes | GCP project number (digits) |
 | `GCP_LOCATION` | `us-central1` | no | Vertex AI region |
 | `GEMINI_MODEL` | `gemini-2.0-flash` | no | Gemini model ID |
 | `CHROMA_DB_PATH` | `./yc_vectors` | no | Path to ChromaDB directory |
@@ -255,10 +255,10 @@ CREATE TABLE channel_queue (
     started_at     TEXT,
     finished_at    TEXT,
     error_msg      TEXT,
-    videos_scraped INTEGER DEFAULT 0,
-    videos_success INTEGER DEFAULT 0,
+    videos_scraped  INTEGER DEFAULT 0,
+    videos_success  INTEGER DEFAULT 0,
     videos_no_trans INTEGER DEFAULT 0,
-    chunks_added   INTEGER DEFAULT 0
+    chunks_added    INTEGER DEFAULT 0
 );
 ```
 
@@ -266,7 +266,7 @@ CREATE TABLE channel_queue (
 
 ## Meridian SDK
 
-No API server needed — hits the local DBs directly.
+No API server needed, hits the local DBs directly.
 
 ```python
 from meridian_sdk import Meridian

@@ -77,7 +77,11 @@ Any general AI model gives you a city block. Meridian gives you the exact adress
 | Philosophy | @einzelganger, @academyofideas, @philosophizethis, @TheSchoolofLife + more |
 | + 7 more domains | Sales, Product, Leadership, Law, Real Estate, Communication, Productivity |
 
-<!-- [SCREENSHOT: Channels tab in the sidebar — category filter pills across the top (AI/Tech, Business, Investing, etc.), channel list below with handles and video counts] -->
+<details>
+<summary>Channels sidebar screenshot</summary>
+<br>
+<img src="docs/screenshot-library.png" width="250" alt="Channel library">
+</details>
 
 ---
 

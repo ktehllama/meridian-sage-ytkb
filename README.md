@@ -33,7 +33,9 @@ That's YouTube. Thousands of hours of lectures, interviews, and talks from some 
 
 Meridian fixes that. It scrapes, indexes, and makes the content of 91 expert YouTube channels queryable through a chat interface. It's actively used in production, not a demo.
 
-![Banner](docs/screenshot-banner.png)
+<div align="center">
+  <img src="docs/screenshot-banner.png" width="900" alt="Banner">
+</div>
 
 ---
 
@@ -46,7 +48,7 @@ Every factual claim in the response is backed by a `[SRC]` citation linking to t
 Type "claued coed" instead of "claude code" and it corrects the typo before searching. If you aren't sure how to phrase something, Meridian silently generates 3 paraphrased variants of your query and merges the results, so vocabulary gaps between how you ask and how an expert said the answer three years ago don't cost you anything. If the knowledge base genuinely has nothing, it falls back to a live DuckDuckGo web search automatically, guaranteeing zero dead ends.
 
 <div align="center">
-  <img src="docs/screenshot-response.png" width="700" alt="Response">
+  <img src="docs/screenshot-response.png" width="600" alt="Response">
 </div>
 
 ---
@@ -115,7 +117,9 @@ A query doesn't get thrown at a search index. It runs through 7 stages before Ge
 
 The fix was cutting Claude out of the retrieval loop entirely. Gemini 2.0 Flash replaced it on Vertex AI, not because of brand preference, but because it's a lightweight model built specifically for parsing structured retrieved data and writing coherent prose from it. It's faster, cheaper, and genuinely better at this task than a general-purpose model. Cost per query dropped to about $0.003. A purpose-built Next.js frontend replaced Claude Desktop, giving full control over the pipeline, the citation format, and the UX.
 
-<!-- [SCREENSHOT: hero screen — animated WebGL background, Meridian globe logo in the top bar, suggestion cards showing, floating glassmorphism input bar at the bottom] -->
+<div align="center">
+  <img src="docs/screenshot-hero.png" width="1200" alt="Meridian hero screen">
+</div>
 
 <!-- START TECHNICAL README -->
  

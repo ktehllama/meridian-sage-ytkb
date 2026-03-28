@@ -45,6 +45,10 @@ Every factual claim in the response is backed by a `[SRC]` citation linking to t
 
 Type "claued coed" instead of "claude code" and it corrects the typo before searching. If you aren't sure how to phrase something, Meridian silently generates 3 paraphrased variants of your query and merges the results, so vocabulary gaps between how you ask and how an expert said the answer three years ago don't cost you anything. If the knowledge base genuinely has nothing, it falls back to a live DuckDuckGo web search automatically, guaranteeing zero dead ends.
 
+<div align="center">
+  <img src="docs/screenshot-response.png" width="700" alt="Response">
+</div>
+
 ---
 
 ## Why general AI models aren't enough

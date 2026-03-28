@@ -21,8 +21,6 @@
 
 <br>
 
-<!-- [SCREENSHOT: full browser in dark mode — sidebar with smart chat names like "YC Pricing B2B SaaS" visible, main panel showing a complete answer with [SRC_1] [SRC_2] [SRC_3] inline superscripts, source cards expanded below each showing video title, channel name, clickable timestamp, relevance score, 2-line quote] -->
-
 </div>
 
 ---
@@ -45,7 +43,7 @@ Every factual claim in the response is backed by a `[SRC]` citation linking to t
 
 Type "claued coed" instead of "claude code" and it corrects the typo before searching. If you aren't sure how to phrase something, Meridian silently generates 3 paraphrased variants of your query and merges the results, so vocabulary gaps between how you ask and how an expert said the answer three years ago don't cost you anything. If the knowledge base genuinely has nothing, it falls back to a live DuckDuckGo web search automatically, guaranteeing zero dead ends.
 
-<!-- [SCREENSHOT: close-up of a single answer — prose text with [SRC_2] superscript visible mid-sentence, source card expanded below showing channel name, video title, "4:32" as a clickable YouTube deep-link, relevance percentage, 2-line transcript excerpt] -->
+![Banner](docs/screenshot-banner.png)
 
 ---
 

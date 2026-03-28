@@ -6,7 +6,7 @@
 
 ### Your personal AI consultant, grounded entirely in what experts actually said.
 
-*249,641 transcript chunks · 91 curated channels · 15 topic domains · zero hallucinations*
+*249,641 transcript chunks · 91 curated channels · 15 topic domains · 4,879 videos · zero hallucinations*
 
 <br>
 

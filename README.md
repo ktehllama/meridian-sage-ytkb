@@ -33,6 +33,8 @@ That's YouTube. Thousands of hours of lectures, interviews, and talks from some 
 
 Meridian fixes that. It scrapes, indexes, and makes the content of 91 expert YouTube channels queryable through a chat interface. It's actively used in production, not a demo.
 
+![Banner](docs/screenshot-banner.png)
+
 ---
 
 ## What it does
@@ -42,8 +44,6 @@ Ask a question in plain English. Meridian runs it against 249,641 indexed transc
 Every factual claim in the response is backed by a `[SRC]` citation linking to the exact second in the source video where it was said. Not a summary. The actual moment, timestamped, clickable.
 
 Type "claued coed" instead of "claude code" and it corrects the typo before searching. If you aren't sure how to phrase something, Meridian silently generates 3 paraphrased variants of your query and merges the results, so vocabulary gaps between how you ask and how an expert said the answer three years ago don't cost you anything. If the knowledge base genuinely has nothing, it falls back to a live DuckDuckGo web search automatically, guaranteeing zero dead ends.
-
-![Banner](docs/screenshot-banner.png)
 
 ---
 

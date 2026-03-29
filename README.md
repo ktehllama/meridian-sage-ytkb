@@ -17,7 +17,6 @@
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
 ![Gemini](https://img.shields.io/badge/Gemini_2.0_Flash-4285F4?style=flat-square&logo=google&logoColor=white)
 ![Raspberry Pi](https://img.shields.io/badge/Raspberry_Pi-A22846?style=flat-square&logo=raspberrypi&logoColor=white)
-![License](https://img.shields.io/badge/license-Apache_2.0-blue?style=flat-square)
 
 <br>
 
@@ -317,3 +316,7 @@ print(m.search("how to talk to users", mode="chat"))
 ```
  
 Modes: `"chat"`, `"serious"` (terse), `"raw"` (chunk dicts, no LLM). See `meridian_sdk/example.py`.
+
+---
+
+© 2025 Matheo. All rights reserved. No permission is granted to copy, use, modify, or distribute any part of this code, for any purpose, without explicit written permission from the author.

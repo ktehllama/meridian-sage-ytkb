@@ -52,6 +52,9 @@ const MessageBubble = React.memo(function MessageBubble({ role, content, sources
     }
     deduped += content.slice(pos);
 
+    // Cleanup: remove orphan spaces before punctuation left by removed citations (e.g. "that ." → "that.")
+    deduped = deduped.replace(/ +([.!?])(?=\s|$)/gm, '$1');
+
     // Step 2: Move citations AFTER sentence-ending punctuation
     // Handles both single "[SRC_3]." and multi "[SRC_3, SRC_4]."
     let processed = deduped.replace(

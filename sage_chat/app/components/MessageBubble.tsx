@@ -52,15 +52,21 @@ const MessageBubble = React.memo(function MessageBubble({ role, content, sources
     }
     deduped += content.slice(pos);
 
-    // Cleanup: remove orphan spaces before punctuation left by removed citations (e.g. "that ." → "that.")
-    deduped = deduped.replace(/ +([.!?])(?=\s|$)/gm, '$1');
+    // Cleanup: dedup can leave orphaned spaces before punctuation (e.g. "Boris . Mike" when
+    // a repeated [SRC_N] between "Boris" and "." gets removed). Step 2 can't catch this
+    // because the citation token is already gone. Space before .!? is never valid in prose.
+    deduped = deduped.replace(/ +([.!?])/g, '$1');
 
-    // Step 2: Move citations AFTER sentence-ending punctuation
-    // Handles both single "[SRC_3]." and multi "[SRC_3, SRC_4]."
+    // Step 2: If a citation sits before punctuation (e.g. "word [SRC_1]."), move the punctuation
+    // in front and preserve the space: "word. [SRC_1]". Captures optional leading space so it
+    // doesn't get stranded before the period ("word .[SRC_1]" was the old bug).
     let processed = deduped.replace(
-      /(\[SRC_\d+(?:,\s*SRC_\d+)*\])([\.\!\?])/g,
-      '$2$1'
+      /( ?)(\[SRC_\d+(?:,\s*SRC_\d+)*\])([\.\!\?])/g,
+      '$3$1$2'
     );
+
+    // Step 2b: Remove space between punctuation and a following citation ("word. [SRC_1]" → "word.[SRC_1]")
+    processed = processed.replace(/([\.\!\?]) (\[SRC_\d+(?:,\s*SRC_\d+)*\])/g, '$1$2');
 
     // Step 3: Replace [SRC_N] and [SRC_N, SRC_M, ...] with <cite> tags
     processed = processed.replace(/\[SRC_(\d+(?:,\s*SRC_\d+)*)\]/g, (_, ids) => {

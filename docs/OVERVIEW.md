@@ -4,7 +4,7 @@
 
 Meridian Sage is a full-stack AI knowledge retrieval system built around a personal library of YouTube transcripts. It indexes the content of 91 curated channels across 15 topic domains, makes all of it searchable through a 7-stage hybrid retrieval pipeline, and serves answers through a purpose-built chat interface backed by Gemini 2.0 Flash.
 
-The corpus sits at 249,641 chunks across roughly 5,000 videos. Every answer cites the exact video and timestamp the information came from. The system runs in production on a Raspberry Pi 4, accessible at `meridian-pi.duckdns.org` via nginx, Let's Encrypt, and DuckDNS.
+The corpus sits at 249,641 chunks across roughly 5,000 videos. Every answer cites the exact video and timestamp the information came from. The system runs in production on a Raspberry Pi 4, served via nginx, Let's Encrypt, and DuckDNS.
 
 ---
 
@@ -56,14 +56,14 @@ Every `/api/chat` request:
 
 The Pi runs both the FastAPI backend and the Next.js frontend via a single `bash start.sh`, managed by systemd for auto-start on boot. Large runtime files (ChromaDB vectors, SQLite database, BM25 cache, around 3 GB total) sync via rsync from the development machine. Code updates come through git on a dedicated `pi` branch.
 
-nginx reverse-proxies `meridian-pi.duckdns.org` to the local ports. HTTPS comes from Let's Encrypt via a DNS challenge through the DuckDNS API, no public port forwarding needed.
+nginx reverse-proxies to the local ports. HTTPS comes from Let's Encrypt via a DNS challenge through the DuckDNS API, no public port forwarding needed.
 
 ---
 
 ## Configuration
 
 | Variable | Default | Required | Description |
-|----------|---------|----------|-------------|
+|----------|---------|----------|--------------|
 | `GCP_PROJECT` | - | yes | GCP project number (digits) |
 | `GCP_LOCATION` | `us-central1` | no | Vertex AI region |
 | `GEMINI_MODEL` | `gemini-2.0-flash` | no | Gemini model ID |
